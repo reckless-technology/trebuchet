@@ -1564,6 +1564,61 @@ int run_fuzz_check(void)
         }
         test_result_columns(is_accepted, "fuzz", "accept", -1, NULL, -1.0, -1.0, accept_fens[i]);
     }
+
+    // A castling field can claim a right the board cannot support, and the generator castles on the rights
+    // alone (movegen.c, "Castling"), so position_set_fen keeps only the rights a king on its home square and
+    // a rook of that colour on the named corner back. Each case gives the rights that must read back and the
+    // number of castling moves generate_legal must then emit for the side to move.
+    static const struct
+    {
+        const char *fen;
+        uint8_t     expected_rights;
+        int         expected_castling_moves;
+        const char *what;
+    } castling_fens[] = {
+        // A Chess960 game read as standard chess (the defect's own position): "KQ" claimed with White's rooks
+        // on c1 and g1. Unsanitised, e1c1 was emitted once the c1 rook moved away, castling a rook off an
+        // empty a1 and leaving the colors bitboards claiming a square the mailbox calls empty.
+        {"b2rk3/p2p1nr1/1p2n1p1/1Np2p1p/2P2P1P/1P1BP1P1/P4N2/2R1K1R1 w KQ - 1 16", 0, 0, "rooks off their corners"},
+        {"4k3/8/8/8/8/8/8/4K3 w KQkq - 0 1", 0, 0, "every right claimed, no rook at all"},
+        {"r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1", FULL_CASTLING_RIGHTS, 2, "all four rights supported"},
+        {"r3k2r/8/8/8/8/8/8/4K2R w KQkq - 0 1",
+         MAY_WHITE_CASTLE_KINGSIDE | MAY_BLACK_CASTLE_KINGSIDE | MAY_BLACK_CASTLE_QUEENSIDE, 1,
+         "one side's queenside right dropped"},
+        // A rook of the wrong colour backs no right. The knight on b1 blocks the rank, so the white king is
+        // not in check — castling must be barred by the missing white rook, not by an attack on the path.
+        {"4k3/8/8/8/8/8/8/rN2K3 w Q - 0 1", 0, 0, "a rook of the wrong colour on the corner"},
+        {"r3k2r/8/8/8/8/8/8/R2K3R w KQkq - 0 1", MAY_BLACK_CASTLE_KINGSIDE | MAY_BLACK_CASTLE_QUEENSIDE, 0,
+         "king off its home square"},
+        // The right stands — king and both rooks are home; only the move is blocked, by our own knight.
+        {"r3k2r/8/8/8/8/8/8/RN2K2R w KQkq - 0 1", FULL_CASTLING_RIGHTS, 1, "a piece merely blocking the path"},
+        {"r3k2r/8/8/8/8/8/8/R3K2R b KQkq - 0 1", FULL_CASTLING_RIGHTS, 2, "all four rights, black to move"},
+    };
+
+    for (size_t i = 0; i < sizeof(castling_fens) / sizeof(castling_fens[0]); i++)
+    {
+        Position pos;
+        position_init(&pos, NULL); // rights and movegen only: no evaluation here
+        int        castling_moves = 0;
+        const bool is_accepted    = position_set_fen(&pos, castling_fens[i].fen);
+        if (is_accepted)
+        {
+            Move      legal[MAX_MOVES];
+            const int count = generate_legal(&pos, legal, false);
+            for (int index = 0; index < count; index++)
+            {
+                castling_moves += move_is_castle(legal[index]);
+            }
+        }
+        const bool is_pass = is_accepted && pos.castling_rights == castling_fens[i].expected_rights &&
+                             castling_moves == castling_fens[i].expected_castling_moves;
+        failures += !is_pass;
+        cases++;
+        char rights_column[32];
+        snprintf(rights_column, sizeof rights_column, "rights %u, %d castling", (unsigned)pos.castling_rights,
+                 castling_moves);
+        test_result_columns(is_pass, "fuzz", "castle", -1, rights_column, -1.0, -1.0, castling_fens[i].what);
+    }
     nnue_free(fuzz_net);
     char detail[16];
     snprintf(detail, sizeof detail, "%d/%d", cases - failures, cases);

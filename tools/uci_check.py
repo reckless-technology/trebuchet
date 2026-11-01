@@ -654,6 +654,58 @@ def check_positions_and_go(gate):
     gate.report(len(bestmoves(lines)) == 1, "go", "clock past history", "(half-move clock 40 with no moves given)")
 
 
+def check_unsupported_castling_rights(gate):
+    """A castling field can claim a right the board cannot support, and the parse must drop it.
+
+    The move generator castles on the rights, the empty squares and the squares the king crosses, and never
+    looks for the rook — sound in play, where a right is revoked the moment a king's or rook's home square is
+    vacated or entered, so a right is the engine's own record that both pieces are home. `position fen` is the
+    one way in for a right no rook backs: this Chess960 game read as standard chess claims KQ with White's
+    rooks on c1 and g1, and unsanitised the search emitted e1c1 once the c1 rook moved away and castled a rook
+    off an empty a1.
+    """
+    chess960_as_standard = "b2rk3/p2p1nr1/1p2n1p1/1Np2p1p/2P2P1P/1P1BP1P1/P4N2/2R1K1R1 w KQ - 1 16"
+    lines = gate.session([f"position fen {chess960_as_standard}", ("d", r"/"),
+                          "position fen 4k3/8/8/8/8/8/8/4K3 w KQkq - 0 1", ("d", r"/"),
+                          "position fen r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1", ("d", r"/"),
+                          "position fen r3k2r/8/8/8/8/8/8/4K2R w KQkq - 0 1", ("d", r"/"),
+                          "position fen r3k2r/8/8/8/8/8/8/R2K3R w KQkq - 0 1", ("d", r"/")])
+    fens = [line for line in lines if "/" in line and not line.startswith("<")]
+    want = ["b2rk3/p2p1nr1/1p2n1p1/1Np2p1p/2P2P1P/1P1BP1P1/P4N2/2R1K1R1 w - - 1 16",
+            "4k3/8/8/8/8/8/8/4K3 w - - 0 1", "r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1",
+            "r3k2r/8/8/8/8/8/8/4K2R w Kkq - 0 1", "r3k2r/8/8/8/8/8/8/R2K3R w kq - 0 1"]
+    gate.report(fens == want, "position", "rights sanitised", "(a right with no rook on its corner, or with the "
+                "king off e1/e8, is dropped; every supported right is kept)")
+    if fens != want:
+        print("       got:", fens, flush=True)
+
+    # The defect's own reproduction: the positions driven over one session at depth 8 with the two that matter
+    # last, so the transposition table is warm when they are reached. Neither can castle — White's rooks are off
+    # a1 and h1 — so no castling move may appear in an answer or a principal variation, and the answer must be a
+    # move the position actually has. The second is the first with the c1 rook moved away, which is how the
+    # search reached b1/c1/d1 empty with the queenside right still set: unsanitised, depth 8 put e1c1 in the PV.
+    rook_moved_off_c1 = "b2rk3/p2p1nr1/1p2n1p1/1Np2p1p/2P2P1P/1P1BP1P1/P1R2N2/4K1R1 w KQ - 2 16"
+    # Warm-up positions with no castling rights of their own, so any castle in the session's output is this
+    # defect and nothing else.
+    warm_up = ["8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1",
+               "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P3/2NP1N2/PPP1QPPP/R4RK1 w - - 0 10",
+               "4rrk1/pp1n1ppp/3bp3/3p4/3P4/1P1BPN2/P4PPP/2R2RK1 b - - 0 20",
+               "2kr3r/ppp2ppp/2n1b3/3q4/3P4/2N1BN2/PPP2PPP/2KR3R w - - 0 15"]
+    steps = ["setoption name Threads value 1"]
+    for fen in [*warm_up, chess960_as_standard, rook_moved_off_c1]:
+        steps += [f"position fen {fen}", go("go depth 8")]
+    lines = gate.session(steps)
+    answers = bestmoves(lines)
+    searched = [line for line in lines if line.startswith(("info depth ", "bestmove "))]
+    castles = sorted({move for line in searched for move in ("e1c1", "e1g1") if move in line})
+    _, legal, _ = gate.run("moves", rook_moved_off_c1)
+    answer = answers[-1] if answers else "-"
+    gate.report(len(answers) == len(warm_up) + 2 and not castles and answer in legal.split(), "go",
+                f"depth 8: {answer}{', ' + ' '.join(castles) if castles else ''}",
+                "(White's rooks off a1/h1: no castle in any answer or PV, on a warm table, with the c1 rook "
+                "moved away too)")
+
+
 def check_malformed(gate):
     junk = ["", "   ", "\t", "foo bar", "setoption", "setoption name", "setoption name Hash", "position fen",
             "position fen 8/8/8 w", "position startpos moves", "d d d", "x" * 70000]
@@ -742,6 +794,7 @@ def main():
         check_evalfile_refusal_is_loud(gate, nnue_paths)
         check_books(gate, scratch)
         check_positions_and_go(gate)
+        check_unsupported_castling_rights(gate)
         check_malformed(gate)
         if is_terminal:
             check_terminal(gate)

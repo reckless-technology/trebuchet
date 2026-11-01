@@ -265,7 +265,12 @@ static inline int generate_moves(const Position *pos, Move *moves, const bool is
                        check_mask, pinned, king_square);
 
     // --- Castling (fully legal in both modes: not in check, path empty and unattacked). The cached checkers
-    // set is exactly "attackers to our king", so the not-in-check gate is a single load. ---
+    // set is exactly "attackers to our king", so the not-in-check gate is a single load.
+    //
+    // A right is taken as proof that the king and that rook are both still home, so no rook is looked for
+    // here. In play CastleMask establishes it, revoking a right the moment either home square is vacated or
+    // entered; on FEN input position_set_fen's supported_castling_rights establishes it, dropping every right
+    // the board cannot support. Keep both, or a FEN-asserted right castles a rook that is not there. ---
     if (!is_noisy_only && pos->checkers == 0)
     {
         const int     rank           = side == WHITE ? 0 : 7;
