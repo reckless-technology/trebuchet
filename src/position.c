@@ -451,6 +451,41 @@ bool position_is_move_legal(const Position *pos, const Move move, const Bitboard
     return true;
 }
 
+/**
+ * @brief The castling rights @p pos's board can actually support: a right survives only where that side's
+ * king stands on its home square and a rook of that colour on the corner the right names.
+ *
+ * The move generator castles on the rights, the empty squares and the squares the king crosses, and never
+ * looks for the rook (movegen.c, "Castling"). In play that is sound: CastleMask revokes a right the moment
+ * either home square is vacated or entered, so a right is the engine's own record that both pieces are home.
+ * FEN is the one input that can assert a right no rook backs, so position_set_fen filters the field through
+ * this — every position the engine can hold then satisfies what the generator relies on. No legal position
+ * loses a right.
+ */
+static uint8_t supported_castling_rights(const Position *pos)
+{
+    uint8_t rights = 0;
+    for (int color = WHITE; color < NUM_COLORS; color++)
+    {
+        const int rank        = color == WHITE ? 0 : 7;
+        const int king_square = make_square(4, rank);
+        if (pos->board[king_square] != KING || position_color_on(pos, king_square) != (Color)color)
+        {
+            continue;
+        }
+        const Bitboard rooks = position_pieces(pos, (Color)color, ROOK);
+        if (rooks & sq_bb(make_square(7, rank)))
+        {
+            rights |= color == WHITE ? MAY_WHITE_CASTLE_KINGSIDE : MAY_BLACK_CASTLE_KINGSIDE;
+        }
+        if (rooks & sq_bb(make_square(0, rank)))
+        {
+            rights |= color == WHITE ? MAY_WHITE_CASTLE_QUEENSIDE : MAY_BLACK_CASTLE_QUEENSIDE;
+        }
+    }
+    return rights;
+}
+
 /** @brief Parse @p fen into @p pos, hardened against malformed input. @return false if malformed/kingless. */
 bool position_set_fen(Position *pos, const char *fen)
 {
@@ -604,6 +639,10 @@ bool position_set_fen(Position *pos, const char *fen)
             break;
         }
     }
+    // Drop every right the board cannot support, so the generator's rights-only castling test stays sound on
+    // FEN input too (supported_castling_rights above). Masked before the key is folded in below, so a
+    // sanitised position hashes as the position it actually is.
+    pos->castling_rights &= supported_castling_rights(pos);
     if (strcmp(ep_str, "-") != 0 && strlen(ep_str) >= 2)
     {
         const int ep_file = ep_str[0] - 'a', ep_rank = ep_str[1] - '1';
