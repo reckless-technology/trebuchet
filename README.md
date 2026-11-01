@@ -70,6 +70,67 @@ CLANG64 shell has on its PATH. MSVC is not supported.
 bash), `.vscode/launch.json` has the debug, release and attach launches per platform (gdb on Linux and Windows, lldb
 through CodeLLDB on macOS), and `.vscode/c_cpp_properties.json` gives IntelliSense each platform's compiler.
 
+## Usage
+
+Zenith is a UCI engine: it speaks the protocol on standard input and output and draws nothing itself, so it is
+normally run by a host - [Reckless Amphitheater](https://github.com/reckless-technology/amphitheater-chess), or any
+other UCI GUI - which is given the path to the binary and starts it. Everything it needs is inside that one file:
+the network and the opening book are embedded, so there is nothing to install beside it and nothing to configure
+before it will play.
+
+Driven by hand, the shortest useful session is:
+
+```
+./build/zenith
+uci                                   # it answers with its name, its options, then uciok
+position startpos moves e2e4 e7e5
+go movetime 1000                      # or: go depth 12 / go nodes 1000000 / go wtime 300000 btime 300000
+stop                                  # if a search is still running
+quit
+```
+
+`go perft <depth>` counts the moves below the current position instead of searching it, one line per root move
+and then the total: `go perft 3` from the start position reports 8902.
+
+### Options
+
+```
+setoption name Hash value 256
+```
+
+| Option | Default | What it is |
+|---|---|---|
+| `Hash` | 64 | The transposition table, in MB, 1 to 65536. More helps a long search and a slow time control most. |
+| `Threads` | as many as the machine reports | Search threads, 1 to 256. The table is shared and everything else is per thread. **A score is only reproducible at `Threads 1`**: above that the threads race through the shared table, so the same search can return a different score each time. |
+| `Move Overhead` | 20 | Milliseconds held back from every move, for the time a host and the pipe between you take. Raise it if Zenith loses on time over a network. |
+| `Clear Hash` | - | Empties the table. A host sends `ucinewgame` between games, which does the same thing. |
+| `EvalFile` | `<embedded>` | A network file to use instead of the embedded one. It passes the same container checks, and the same net loaded this way searches exactly as the embedded one does. |
+| `OwnBook` | **false** | Whether to play from an opening book at all. Off by default, deliberately: testing always runs bookless, so a measurement is of the search and not of the book. |
+| `BookFile` | `<embedded>` | A Polyglot `.bin` to use instead of the embedded book. See [books/README.md](books/README.md); `make get-book` fetches a free one and prints the two `setoption` lines. |
+
+Eleven further spin options - `RfpMargin`, `NmpDivisor`, `LmpBase`, `FutilityBase`, `FutilityMargin`,
+`SeeCaptureMargin`, `LmrBase`, `LmrDivisor`, `SingularMargin`, `AspirationDelta` and `HistoryMax` - expose the
+search's own margins and divisors for tuning. They are not settings to improve play by hand: the defaults are what
+the tuner arrived at, and the `bench` node signature below is computed with them, so changing one changes the
+signature and the engine no longer matches the number its own release asserts.
+
+### Commands of its own
+
+The same binary answers a few commands as arguments rather than over the protocol:
+
+```sh
+./build/zenith bench [depth]          # fixed-depth search: the node signature, and nps. No depth = the pinned one
+./build/zenith license                # the licence and the third-party notices
+./build/zenith moves "<fen>"          # every legal move, in UCI notation
+./build/zenith san "<fen>" <uci...>   # those moves written in SAN
+./build/zenith applymoves "<fen>" [uci...]   # the FEN they lead to
+./build/zenith polykey "<fen>"        # the position's Polyglot book key, 16 hex digits
+```
+
+`bench` is the one worth knowing: its node count is deterministic at a fixed depth, so it is both a speed
+measurement and a check that the search is behaving - a build whose signature differs from its release's has
+changed how it searches. The verification commands that go with it are in [Verify](#verify).
+
 ## Verify
 
 Every correctness property has an executable gate. `make check` runs them all; CI runs the same gates on
