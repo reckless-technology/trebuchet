@@ -1,28 +1,28 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (C) 2026 Jonny Reckless
-"""Build a Polyglot opening book from scratch by Zenith self-play — no external book or game data.
+"""Build a Polyglot opening book from scratch by Trebuchet self-play — no external book or game data.
 
 The builder grows a scored opening DAG from the start position, best-first:
 
   1. SCREEN every legal move of a frontier position with a cheap fixed-node search.
   2. RESCORE the survivors (within --screen-margin of the best, at most --max-candidates) deeper.
   3. PLAYOUT near-ties: when kept moves sit within --playout-margin of the best, play real
-     Zenith-vs-Zenith game pairs from each candidate child (color-swapped, node-budget jitter for
+     Trebuchet-vs-Trebuchet game pairs from each candidate child (color-swapped, node-budget jitter for
      variety) and blend the outcome into the move weights.
   4. BACK UP values over the DAG (negamax over expanded children), so upstream refutations demote
      whole lines, then EXPAND the highest-priority frontier (reach probability x candidate count).
 
-All chess knowledge lives in the engine binary: legal moves (`zenith moves`), Polyglot keys
-(`zenith polykey`, bookcheck-validated), child FENs (`zenith applymoves`), and every score (UCI
+All chess knowledge lives in the engine binary: legal moves (`trebuchet moves`), Polyglot keys
+(`trebuchet polykey`, bookcheck-validated), child FENs (`trebuchet applymoves`), and every score (UCI
 searches with an explicit EvalFile). The builder is pure orchestration; the store is a resumable
 JSON file. `--emit` writes the .bin (big-endian {key, move, weight, learn}, key-sorted, castling in
 Polyglot king-takes-rook form to match book.c's encoder); `--match` plays a book-vs-bookless
 fastchess match as the round's Elo gate.
 
 Typical round:
-  python3 tools/build_book.py --state data/book/store.json --expand 100 --emit books/zenith-r1.bin
-  python3 tools/build_book.py --state data/book/store.json --match books/zenith-r1.bin --games 400
+  python3 tools/build_book.py --state data/book/store.json --expand 100 --emit books/trebuchet-r1.bin
+  python3 tools/build_book.py --state data/book/store.json --match books/trebuchet-r1.bin --games 400
 """
 import argparse
 import json
@@ -47,7 +47,7 @@ def log(message):
 
 
 class Engine:
-    """One persistent Zenith UCI process pinned to a single thread and an explicit net."""
+    """One persistent Trebuchet UCI process pinned to a single thread and an explicit net."""
 
     def __init__(self, binary, net):
         self.process = subprocess.Popen([binary], stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True,
@@ -131,7 +131,7 @@ class EnginePool:
 
 
 def run_cli(binary, *args):
-    """One-shot zenith subcommand (moves / polykey / applymoves); returns stripped stdout."""
+    """One-shot trebuchet subcommand (moves / polykey / applymoves); returns stripped stdout."""
     result = subprocess.run([binary, *args], capture_output=True, text=True)
     if result.returncode != 0:
         raise RuntimeError(f"{args[0]} failed: {result.stderr.strip()}")
@@ -198,7 +198,7 @@ def expand_position(args, pool, store, fen, ply):
 def add_coverage(args, pool, moves, screened, best_score):
     """Attach opponent-coverage candidates: screened moves outside the kept set but within --cover-margin
     of the best. Never emitted as our pick (unless backup later proves one near-best); their children give
-    the book prepared replies to lines Zenith would not choose itself."""
+    the book prepared replies to lines Trebuchet would not choose itself."""
     extras = [(move, child, -screen) for move, child, screen in screened
               if move not in moves and -screen >= best_score - args.cover_margin][: args.cover_max]
     if not extras:
@@ -332,7 +332,7 @@ def playout_near_ties(args, store, key):
 
 
 def playout_match(args, fen):
-    """Zenith-vs-Zenith game pairs from @fen at jittered node budgets; returns (points, games) for
+    """Trebuchet-vs-Trebuchet game pairs from @fen at jittered node budgets; returns (points, games) for
     the side to move of @fen. Node jitter makes each pair distinct despite a deterministic engine."""
     epd_path = os.path.join(os.path.dirname(args.state) or ".", "playout.epd")
     with open(epd_path, "w") as handle:
@@ -438,7 +438,7 @@ def book_match(args, book_path):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--engine", default="./build/zenith")
+    parser.add_argument("--engine", default="./build/trebuchet")
     parser.add_argument("--net", default="", help="EvalFile for scoring engines (empty = the embedded net)")
     parser.add_argument("--fastchess", default=os.path.expanduser("~/pawnstar_nnue/fastchess/fastchess"))
     parser.add_argument("--state", default="data/book/store.json")

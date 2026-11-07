@@ -8,14 +8,14 @@
 #include <assert.h>
 #include <stdlib.h>
 
-#ifdef ZENITH_USE_PEXT
+#ifdef TREBUCHET_USE_PEXT
 #include <immintrin.h> // _pext_u64 (BMI2)
 #endif
 
 // The leaper/geometry tables are generated constants (see tools/generate_tables.py); only the magic
 // sliding-attack tables below are runtime-FILLED (their multipliers are generated constants too).
 #include "generated/bitboard_tables.inc"
-#ifndef ZENITH_USE_PEXT
+#ifndef TREBUCHET_USE_PEXT
 #include "generated/magic_tables.inc"
 #endif
 
@@ -79,7 +79,7 @@ static void init_magics(const Bitboard magic_numbers[64], Bitboard *table, Magic
         magics[square].mask          = mask;
         magics[square].shift         = 64 - relevant_bits;
         magics[square].attacks       = attack_base;
-#ifdef ZENITH_USE_PEXT
+#ifdef TREBUCHET_USE_PEXT
         magics[square].magic = 0; // unused with PEXT indexing
         (void)magic_numbers;
 #else
@@ -117,7 +117,7 @@ void init_bitboards(void)
         return;
     }
     is_initialized = true;
-#ifdef ZENITH_USE_PEXT
+#ifdef TREBUCHET_USE_PEXT
     init_magics(NULL, BishopTable, BishopMagics, BishopDirs);
     init_magics(NULL, RookTable, RookMagics, RookDirs);
 #else

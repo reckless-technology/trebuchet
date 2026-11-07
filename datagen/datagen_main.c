@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Jonny Reckless
 /**
  * @file
- * @brief Entry point of the standalone self-play generator (`make datagen` -> ./build/zenith-datagen).
+ * @brief Entry point of the standalone self-play generator (`make datagen` -> ./build/trebuchet-datagen).
  */
 #include "datagen.h"
 #include "engine.h"

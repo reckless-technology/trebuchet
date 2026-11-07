@@ -32,7 +32,7 @@ enum
 /**
  * @brief Whether a perspective whose king sits on files e-h is mirrored horizontally before indexing.
  *
- * Always on in Zenith — the shape the shared evaluator standardised on is Zenith's, mirroring included
+ * Always on in Trebuchet — the shape the shared evaluator standardised on is Trebuchet's, mirroring included
  * (+14.3 Elo, SPRT-gated here). It is a named constant rather than a literal because the container's
  * format version and its mirroring flag are both *derived* from it, exactly as the C++ port derives them
  * from its build knob: turning mirroring off would make this a different format, not the same format with

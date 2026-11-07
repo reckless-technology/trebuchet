@@ -1,13 +1,13 @@
 ---
-name: zenith-opening-book
+name: trebuchet-opening-book
 description: The self-play-built Polyglot opening book — recipe, round results, and lessons
 metadata:
   type: project
 ---
 
-Zenith's opening book (`books/zenith-book-r3.bin`, committed; 321KB, ~9,900 positions, ~20k weighted
-moves) is built ENTIRELY from Zenith self-play by `tools/build_book.py` — no external book or game data
-(consistent with [[zenith-goal-independence]]).
+Trebuchet's opening book (`books/trebuchet-book-r3.bin`, committed; 321KB, ~9,900 positions, ~20k weighted
+moves) is built ENTIRELY from Trebuchet self-play by `tools/build_book.py` — no external book or game data
+(consistent with [[trebuchet-goal-independence]]).
 
 **Recipe (validated over three gated rounds):** grow a position DAG from startpos best-first by reach
 probability; per position: screen every legal move (150k nodes) -> rescore survivors (2M nodes, keep <=4
@@ -23,17 +23,17 @@ even when the bookless gate saturates. Judge books head-to-head, not only vs boo
 
 **Lessons:**
 - Tight keep-margins matter: 40cp let junk sidelines (h6/a6) into round 1; 25cp + playouts fixed it.
-- The book only contains moves the ENGINE rates near-best (zenith books no 1.d4 — it scores it 29cp below
+- The book only contains moves the ENGINE rates near-best (the engine books no 1.d4 — it scores it 29cp below
   e4). Fine for self-play; a general tournament book needs ASYMMETRIC margins (wide for opponent moves,
-  tight for own) so the book has replies to lines zenith wouldn't play (e.g. as Black vs 1.d4). Polyglot
+  tight for own) so the book has replies to lines the engine wouldn't play (e.g. as Black vs 1.d4). Polyglot
   needs no format support for this: replies live under the position-after-the-move key. UNTESTED extension.
 - book.c had a latent mod-by-zero when a position's matched entries were all weight-0 (fixed with the ship).
-- Long-running pipelines must own a DEDICATED binary copy (data/book/zenith-worker) — rebuilding
-  ./build/zenith under a live consumer crashes it (exec during the non-executable write window).
+- Long-running pipelines must own a DEDICATED binary copy (data/book/trebuchet-worker) — rebuilding
+  ./build/trebuchet under a live consumer crashes it (exec during the non-executable write window).
 - Store is resumable JSON keyed by polyglot key (data/book/store.json); tools/show_book.py displays any
   Polyglot book as SAN lines.
 
-**Round 4 — coverage book (zenith-book-r4.bin, 487KB, ~14k positions), SHIPPED 2026-07-30.** Adds
+**Round 4 — coverage book (trebuchet-book-r4.bin, 487KB, ~14k positions), SHIPPED 2026-07-30.** Adds
 opponent coverage: moves within 90cp/top-4 at plies <10 expand (never emitted as our pick unless backup
 promotes them within the 25cp playable margin — which it did for 1.c4 at the root (weight 54 beside 1.e4's
 115); 1.d4 stayed outside it: r4 holds NO 1.d4 at the root, though it holds ~2,100 positions after 1.d4 as
@@ -44,7 +44,7 @@ structural, not Elo-provable with available opponents. Ship rationale: strict su
 cost. Lesson: book gates need a NEAR-PEER foreign opponent to resolve anything; self-play gates cannot
 see coverage by construction.
 
-**Round 5 — r4 + 1.d4 at the root (zenith-book-r5.bin), SHIPPED 2026-10-20 on Jonny's word.** Jonny wanted
+**Round 5 — r4 + 1.d4 at the root (trebuchet-book-r5.bin), SHIPPED 2026-10-20 on Jonny's word.** Jonny wanted
 1.d4 about a fifth of the time; `tools/add_book_moves.py` adds hand-chosen entries to a built book (keys from
 the engine's `polykey`, legality from `moves`, build_book.py's encoding): r5 = r4 + startpos d2d4 weight 42
 (42/211 = 19.9 %), opening r4's existing 1.d4 lines. No gate run (a deliberate repertoire choice, not a

@@ -1,8 +1,8 @@
 {
-  // Debug configs for Zenith: gdb through the C/C++ extension (ms-vscode.cpptools) on Linux and Windows, lldb through
+  // Debug configs for Trebuchet: gdb through the C/C++ extension (ms-vscode.cpptools) on Linux and Windows, lldb through
   // CodeLLDB (vadimcn.vscode-lldb) on macOS, where no gdb exists. Each platform has the same three shapes:
   // "Launch" builds the ASan/UBSan debug binary first and runs it in the integrated terminal so you can type UCI
-  // commands (uci, position…, go…); "Launch (release)" runs the optimised ./build/zenith (no -g, so no source lines);
+  // commands (uci, position…, go…); "Launch (release)" runs the optimised ./build/trebuchet (no -g, so no source lines);
   // "Attach" hooks the debugger onto an already-running engine (pick the process, e.g. one a GUI or fastchess spawned).
   //
   // Windows: the binaries are MSYS2 CLANG64 builds, debugged with that environment's gdb. They load libwinpthread and,
@@ -12,10 +12,10 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Linux: Launch zenith (debug build, ASan+UBSan)",
+      "name": "Linux: Launch trebuchet (debug build, ASan+UBSan)",
       "type": "cppdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/build/zenith-debug",
+      "program": "${workspaceFolder}/build/trebuchet-debug",
       "args": [],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
@@ -32,10 +32,10 @@
       ]
     },
     {
-      "name": "Linux: Launch zenith (release build)",
+      "name": "Linux: Launch trebuchet (release build)",
       "type": "cppdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/build/zenith",
+      "program": "${workspaceFolder}/build/trebuchet",
       "args": [],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
@@ -47,10 +47,10 @@
       ]
     },
     {
-      "name": "Linux: Attach to running zenith",
+      "name": "Linux: Attach to running trebuchet",
       "type": "cppdbg",
       "request": "attach",
-      "program": "${workspaceFolder}/build/zenith",
+      "program": "${workspaceFolder}/build/trebuchet",
       "processId": "${command:pickProcess}",
       "cwd": "${workspaceFolder}",
       "MIMode": "gdb",
@@ -59,10 +59,10 @@
       ]
     },
     {
-      "name": "macOS: Launch zenith (debug build, ASan+UBSan)",
+      "name": "macOS: Launch trebuchet (debug build, ASan+UBSan)",
       "type": "lldb",
       "request": "launch",
-      "program": "${workspaceFolder}/build/zenith-debug",
+      "program": "${workspaceFolder}/build/trebuchet-debug",
       "args": [],
       "cwd": "${workspaceFolder}",
       "env": { "ASAN_OPTIONS": "abort_on_error=1:detect_leaks=0", "UBSAN_OPTIONS": "print_stacktrace=1" },
@@ -70,26 +70,26 @@
       "preLaunchTask": "make debug"
     },
     {
-      "name": "macOS: Launch zenith (release build)",
+      "name": "macOS: Launch trebuchet (release build)",
       "type": "lldb",
       "request": "launch",
-      "program": "${workspaceFolder}/build/zenith",
+      "program": "${workspaceFolder}/build/trebuchet",
       "args": [],
       "cwd": "${workspaceFolder}",
       "terminal": "integrated",
       "preLaunchTask": "make"
     },
     {
-      "name": "macOS: Attach to running zenith",
+      "name": "macOS: Attach to running trebuchet",
       "type": "lldb",
       "request": "attach",
-      "program": "${workspaceFolder}/build/zenith"
+      "program": "${workspaceFolder}/build/trebuchet"
     },
     {
-      "name": "Windows: Launch zenith (debug build, ASan+UBSan)",
+      "name": "Windows: Launch trebuchet (debug build, ASan+UBSan)",
       "type": "cppdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/build/zenith-debug.exe",
+      "program": "${workspaceFolder}/build/trebuchet-debug.exe",
       "args": [],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
@@ -108,10 +108,10 @@
       ]
     },
     {
-      "name": "Windows: Launch zenith (release build)",
+      "name": "Windows: Launch trebuchet (release build)",
       "type": "cppdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/build/zenith.exe",
+      "program": "${workspaceFolder}/build/trebuchet.exe",
       "args": [],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
@@ -125,10 +125,10 @@
       ]
     },
     {
-      "name": "Windows: Attach to running zenith",
+      "name": "Windows: Attach to running trebuchet",
       "type": "cppdbg",
       "request": "attach",
-      "program": "${workspaceFolder}/build/zenith.exe",
+      "program": "${workspaceFolder}/build/trebuchet.exe",
       "processId": "${command:pickProcess}",
       "cwd": "${workspaceFolder}",
       "MIMode": "gdb",

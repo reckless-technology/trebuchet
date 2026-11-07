@@ -3,23 +3,23 @@
 # Copyright (C) 2026 Jonny Reckless
 # Self-play / cross-engine SPRT via fastchess (cutechess-cli is not installed on this box). Measures the
 # Elo of a change: a candidate engine/net vs a baseline. Works for:
-#   * new net vs shipped: CAND=./build/zenith CAND_NET=nets/x.nnue  BASE=./build/zenith          (BASE_NET unset -> embedded net)
-#   * version vs version: two zenith binaries
+#   * new net vs shipped: CAND=./build/trebuchet CAND_NET=nets/x.nnue  BASE=./build/trebuchet          (BASE_NET unset -> embedded net)
+#   * version vs version: two trebuchet binaries
 #   * vs pawnstar:      BASE=/home/jonny/work/pawnstar/build/pawnstar BASE_NET=.../pawnstar-v12.bin
 #
 # Usage:  tools/sprt.sh [rounds]
-# Env:    CAND (default ./build/zenith), BASE (default ./build/zenith-base), CAND_NET, BASE_NET (EvalFile paths),
+# Env:    CAND (default ./build/trebuchet), BASE (default ./build/trebuchet-base), CAND_NET, BASE_NET (EvalFile paths),
 #         TC (default 8+0.08), ELO0/ELO1 (default 0/5), CONCURRENCY, HASH, OPENINGS (REQUIRED).
 #
 # Every engine option a measurement depends on is pinned below rather than left to the UCI default, the
-# same way `pawnstar/tools/pawnstar-match.sh` does it. Threads especially: zenith's own default is
+# same way `pawnstar/tools/pawnstar-match.sh` does it. Threads especially: trebuchet's own default is
 # `platform_cpu_count() / 2` (src/uci.c), so an unpinned run on a 16-CPU machine plays 8-thread engines -
 # and with CONCURRENCY also sized from nproc, it oversubscribes the box by an order of magnitude and
 # reports scheduler noise as Elo. A harness pins Threads=1; src/uci.c's own comment says so.
 set -euo pipefail
 
-CAND="${CAND:-./build/zenith}"
-BASE="${BASE:-./build/zenith-base}"
+CAND="${CAND:-./build/trebuchet}"
+BASE="${BASE:-./build/trebuchet-base}"
 ROUNDS="${1:-2000}"
 TC="${TC:-8+0.08}"
 ELO0="${ELO0:-0}"
@@ -53,7 +53,7 @@ if [ -z "$OPENINGS" ]; then
 fi
 [ -f "$OPENINGS" ] || { echo "missing openings: $OPENINGS" >&2; exit 1; }
 
-# Optional per-engine EvalFile (NNUE net). Absent => that side uses its default (zenith: the embedded net).
+# Optional per-engine EvalFile (NNUE net). Absent => that side uses its default (trebuchet: the embedded net).
 cand_net_arg=(); [ -n "${CAND_NET:-}" ] && cand_net_arg=(option.EvalFile="$CAND_NET")
 base_net_arg=(); [ -n "${BASE_NET:-}" ] && base_net_arg=(option.EvalFile="$BASE_NET")
 # Optional per-engine working directory (e.g. pawnstar loads its net via a relative path).

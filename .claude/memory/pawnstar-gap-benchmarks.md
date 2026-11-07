@@ -1,6 +1,6 @@
 ---
 name: pawnstar-gap-benchmarks
-description: Zenith-vs-pawnstar Elo gaps at various configs (the reference-opponent benchmark)
+description: Trebuchet-vs-pawnstar Elo gaps at various configs (the reference-opponent benchmark)
 metadata: 
   node_type: memory
   type: project
@@ -8,13 +8,13 @@ metadata:
   modified: 2026-07-25T11:08:31.366Z
 ---
 
-Zenith's strength is benchmarked against pawnstar C++ (the reference opponent; user wants Zenith stronger). Gaps measured with fastchess, tc=8+0.08, PlentyChess openings.
+Trebuchet's strength is benchmarked against pawnstar C++ (the reference opponent; user wants Trebuchet stronger). Gaps measured with fastchess, tc=8+0.08, PlentyChess openings.
 
-**GOAL FULLY ACHIEVED (2026-07-23): Zenith beats pawnstar at BOTH single thread (+77.7 ± 25.2) and 8 threads
+**GOAL FULLY ACHIEVED (2026-07-23): Trebuchet beats pawnstar at BOTH single thread (+77.7 ± 25.2) and 8 threads
 (+107.5 ± 37.8).**
 
 **RECONFIRMED (2026-07-25) vs a freshly-rebuilt pawnstar 0.13.603, and the lead is TIME-CONTROL-INVARIANT.**
-Shipped ./zenith (setwise movegen + kb3 + full stack) vs pawnstar 0.13.603 + v12 net, single-thread both,
+The shipped binary (setwise movegen + kb3 + full stack) vs pawnstar 0.13.603 + v12 net, single-thread both,
 OwnBook=false, Hash=64, conc 8, SPRT elo[0,5]:
 - **8+0.08: +78.07 ± 18.39 (61.05%, 724 games) — H1 accepted.**
 - **40/60:  +77.15 ± 16.71 (60.92%, 714 games) — H1 accepted.**
@@ -23,11 +23,11 @@ Near-identical at both TCs → the ~+78 single-thread edge is not a fast-TC arti
 setwise is strength-neutral, PEXT is bit-identical.)
 
 **CRITICAL MEASUREMENT LESSON — pawnstar's UCI defaults are `Threads=32` and `OwnBook=true`.** Every earlier
-"single-thread" gap number (−278, −258, −140, −134) never overrode them, so those matches were actually Zenith
+"single-thread" gap number (−278, −258, −140, −134) never overrode them, so those matches were actually Trebuchet
 1-thread vs pawnstar 32-threads(+book) — a measurement artifact, NOT a real deficit. Always pass explicit
 `option.Threads=1 option.OwnBook=false` to pawnstar. The corrected single-thread number (2026-07-23, conc 8):
-**Zenith +77.7 ± 25.2 AHEAD.** Supporting data: single-thread nps parity (zenith 2.47M vs pawnstar 2.4–2.5M,
-kb3 loaded) and zenith reaches depth 20 in 2.7s where pawnstar reaches 17 in 3.1s.
+**Trebuchet +77.7 ± 25.2 AHEAD.** Supporting data: single-thread nps parity (trebuchet 2.47M vs pawnstar 2.4–2.5M,
+kb3 loaded) and trebuchet reaches depth 20 in 2.7s where pawnstar reaches 17 in 3.1s.
 
 **IMPORTANT — always match `-concurrency` when comparing gap numbers.** Concurrency changes the timed result a lot: pc2 vs pawnstar was −238±52 at conc 30 but −277±44 at conc 8 (same net, same TC). Cross-run comparisons at different concurrency are meaningless.
 
@@ -35,7 +35,7 @@ Single-thread, matched conditions (conc 8):
 - **pc2 (512, 190M PlentyChess positions):** −277.5 ± 43.6 vs pawnstar (2026-07-21).
 - **kb2 (king buckets, 650M PlentyChess positions):** −257.6 ± 40.7 → kb2 closes ~+20 Elo (eval gain, partial transfer).
 - **kb2 + correction history + legality oracle:** **−140.4 ± 34.1** (2026-07-22) → full stack closes ~+137 Elo.
-- **+ kb3 + inline EP/castle + SPSA-tuned search (current ./zenith):** **−133.6 ± 32.8** (2026-07-23). The single-
+- **+ kb3 + inline EP/castle + SPSA-tuned search (the binary of that date):** **−133.6 ± 32.8** (2026-07-23). The single-
   thread gap is roughly HALVED from −278. Note: kb3 (+8) and SPSA (+26.5) are big SELF-PLAY gains but only nudged
   the pawnstar point estimate (−140→−134, within the ±33 noise) — partial transfer again, and hard to resolve at
   ~300 games. The legality-oracle SPEED win (~1:1 transfer) did most of the −278→−140 closure.
@@ -47,23 +47,23 @@ legality-oracle speed win transferred to pawnstar near 1:1 (speed helps vs any o
 
 8 threads each (Lazy SMP), same conditions (conc 3, 8+0.08):
 - pc2 net (2026-07-20): −42 ± 48 vs pawnstar — near-even.
-- **kb3 + corrhist + legality + EP/castle + SPSA-tuned (2026-07-23): +107.5 ± 37.8 → ZENITH IS STRONGER THAN
-  PAWNSTAR AT 8 THREADS.** GOAL ACHIEVED at multi-thread. A +149 Elo swing from the session's work. Zenith's
+- **kb3 + corrhist + legality + EP/castle + SPSA-tuned (2026-07-23): +107.5 ± 37.8 → TREBUCHET IS STRONGER THAN
+  PAWNSTAR AT 8 THREADS.** GOAL ACHIEVED at multi-thread. A +149 Elo swing from the session's work. Trebuchet's
   Lazy SMP scales much better than pawnstar's, so at equal threads the eval+search gains compound into a
-  commanding lead — even though single-thread is still −134 (partial transfer of eval gains). See [[zenith-goal-independence]].
+  commanding lead — even though single-thread is still −134 (partial transfer of eval gains). See [[trebuchet-goal-independence]].
 
 **Key lesson — self-play gains only partially transfer to a much stronger opponent.** kb2 is +63 vs pc2 in
 self-play but only ~+20 better against pawnstar (~1/3 transfer). SPRT self-play deltas OVERSTATE the gain
 versus a stronger reference. The single-thread gap to pawnstar is still large (~−258) but narrowing; eval
-quality (more/better data, see [[zenith-eval-experiments]]) remains the highest-leverage lever. Next data
+quality (more/better data, see [[trebuchet-eval-experiments]]) remains the highest-leverage lever. Next data
 scale-ups should keep pushing — 650M was 8 of 16 available PlentyChess shards.
 
 **BOTCHED MEASUREMENT (2026-07-27, since corrected):** a "−37.7 ± 18.4" run repeated the exact artifact this
-memory warns about — pawnstar was left on its Threads=32 + OwnBook=true defaults. Zenith 1-thread scoring
+memory warns about — pawnstar was left on its Threads=32 + OwnBook=true defaults. Trebuchet 1-thread scoring
 44.6% against THAT is consistent with the true lead growing. ALWAYS pass option.Threads=1
 option.OwnBook=false to pawnstar, and match -concurrency (the valid baseline numbers used conc 8).
 
 - **FAIR re-measurement (2026-07-27, correct conditions: both Threads=1, OwnBook=false, Hash=64, conc 8,
-  8+0.08, 1000 games): Zenith +111.75 ± 15.49 (65.55%).** The lead GREW from +78 (2026-07-25) — the session's
+  8+0.08, 1000 games): Trebuchet +111.75 ± 15.49 (65.55%).** The lead GREW from +78 (2026-07-25) — the session's
   +43 self-play Elo (SPSA pass 2 +11, qsearch TT +17, ob2 net +15) plus the gated-clock speed win transferred
-  to roughly +34 of gap movement. Zenith is decisively stronger than pawnstar single-thread.
+  to roughly +34 of gap movement. Trebuchet is decisively stronger than pawnstar single-thread.

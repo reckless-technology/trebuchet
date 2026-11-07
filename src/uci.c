@@ -33,18 +33,18 @@ static const char *const TOKEN_SEPARATORS = " \t\r\n";
  */
 typedef struct UciSession
 {
-    Engine      *engine;                     ///< the engine instance this session drives (TT etc.)
-    Position     game;                       ///< current game position
-    uint64_t     game_hist[SEARCH_HIST_CAP]; ///< keys of positions before @ref game (for repetition detection)
-    int          game_hist_count;            ///< number of valid entries in @ref game_hist
-    Searcher    *pool;                       ///< one Searcher per search thread (Lazy SMP), malloc'd
-    int          pool_size;                  ///< current pool length
-    zen_thread_t search_thread;              ///< coordinator thread: spawns helpers, runs the main search
-    bool         is_search_thread_running;   ///< whether @ref search_thread is live (join before reuse)
-    int          thread_count;               ///< requested Threads option (1..256)
-    int64_t      move_overhead;              ///< Move Overhead option (ms)
-    bool         is_own_book_enabled;        ///< OwnBook option; default OFF — testing must stay bookless
-    Book         book;                       ///< the loaded opening book (zeroed = none)
+    Engine           *engine;                     ///< the engine instance this session drives (TT etc.)
+    Position          game;                       ///< current game position
+    uint64_t          game_hist[SEARCH_HIST_CAP]; ///< keys of positions before @ref game (for repetition detection)
+    int               game_hist_count;            ///< number of valid entries in @ref game_hist
+    Searcher         *pool;                       ///< one Searcher per search thread (Lazy SMP), malloc'd
+    int               pool_size;                  ///< current pool length
+    platform_thread_t search_thread;              ///< coordinator thread: spawns helpers, runs the main search
+    bool              is_search_thread_running;   ///< whether @ref search_thread is live (join before reuse)
+    int               thread_count;               ///< requested Threads option (1..256)
+    int64_t           move_overhead;              ///< Move Overhead option (ms)
+    bool              is_own_book_enabled;        ///< OwnBook option; default OFF — testing must stay bookless
+    Book              book;                       ///< the loaded opening book (zeroed = none)
 } UciSession;
 
 /** @brief Stop any in-flight search and join the coordinator thread (safe to call when idle). */
@@ -53,7 +53,7 @@ static void join_search(UciSession *session)
     if (session->is_search_thread_running)
     {
         atomic_store_explicit(&session->engine->search.is_stop_requested, true, memory_order_relaxed);
-        zen_thread_join(&session->search_thread);
+        platform_thread_join(&session->search_thread);
         session->is_search_thread_running = false;
     }
 }
@@ -349,20 +349,20 @@ static int go_thread_main(void *raw)
         pool[thread_index].move_overhead = session->move_overhead;
     }
     atomic_store_explicit(&session->engine->search.is_stop_requested, false, memory_order_relaxed);
-    zen_thread_t helpers[256];
-    HelperArgs   helper_args[256];
+    platform_thread_t helpers[256];
+    HelperArgs        helper_args[256];
     for (int thread_index = 1; thread_index < active_threads; thread_index++)
     {
         helper_args[thread_index].searcher = &pool[thread_index];
         helper_args[thread_index].args     = args;
-        zen_thread_create(&helpers[thread_index], helper_thread_main, &helper_args[thread_index]);
+        platform_thread_create(&helpers[thread_index], helper_thread_main, &helper_args[thread_index]);
     }
     const Move best = searcher_go(&pool[0], args->root, &args->limits, true); // main thread manages time + prints info
     atomic_store_explicit(&session->engine->search.is_stop_requested, true,
                           memory_order_relaxed); // stop any deepening helper
     for (int thread_index = 1; thread_index < active_threads; thread_index++)
     {
-        zen_thread_join(&helpers[thread_index]);
+        platform_thread_join(&helpers[thread_index]);
     }
     char uci_buf[8];
     printf("bestmove %s\n", move_is_none(best) ? "0000" : move_to_uci(best, uci_buf));
@@ -477,7 +477,7 @@ static void go(UciSession *session, char **save_ptr)
     args->limits  = limits;
     memcpy(args->hist, session->game_hist, session->game_hist_count * sizeof(uint64_t));
     args->hist_count = session->game_hist_count;
-    if (zen_thread_create(&session->search_thread, go_thread_main, args) == 0)
+    if (platform_thread_create(&session->search_thread, go_thread_main, args) == 0)
     {
         session->is_search_thread_running = true;
     }
@@ -640,8 +640,8 @@ static void print_notices(void); // defined beside uci_run; the `license` comman
 
 void uci_loop(Engine *engine)
 {
-    // Startup banner (pawnstar-style): version = major.minor.<git commit count>, stamped by the Makefile.
-    printf("Zenith %s compiled %s %s\n", ZENITH_VERSION_STRING, __DATE__, __TIME__);
+    // Startup banner (pawnstar-style): version = major.minor.build from the git tags, stamped by the Makefile.
+    printf("Trebuchet %s compiled %s %s\n", TREBUCHET_VERSION_STRING, __DATE__, __TIME__);
     fflush(stdout);
     // Default Threads = half the logical CPUs the OS reports: on SMT machines that gives each Lazy-SMP
     // thread a real core instead of a hyperthread sibling (two search threads sharing one core fight over
@@ -663,7 +663,7 @@ void uci_loop(Engine *engine)
         }
         if (strcmp(token, "uci") == 0)
         {
-            printf("id name Zenith %s\n", ZENITH_VERSION_STRING);
+            printf("id name Trebuchet %s\n", TREBUCHET_VERSION_STRING);
             printf("id author Jonny Reckless\n");
             printf("option name Hash type spin default 64 min 1 max 65536\n");
             printf("option name Threads type spin default %d min 1 max 256\n", session.thread_count);
@@ -732,7 +732,7 @@ void uci_loop(Engine *engine)
             fflush(stdout);
         }
         // The licence and the third-party notices the embedded network's ODbL 1.0 training data obliges -
-        // the same text `zenith license` prints, reachable from a GUI or a harness over the protocol. It is
+        // the same text `trebuchet license` prints, reachable from a GUI or a harness over the protocol. It is
         // the standard command across the Reckless engines. Printing only: no engine or search state is
         // read or written, so it cannot move a node count.
         else if (strcmp(token, "license") == 0 || strcmp(token, "licence") == 0)
@@ -764,7 +764,7 @@ void uci_loop(Engine *engine)
  */
 static void print_notices(void)
 {
-    printf("Zenith %s - an independent UCI chess engine.\n", ZENITH_VERSION_STRING);
+    printf("Trebuchet %s - an independent UCI chess engine.\n", TREBUCHET_VERSION_STRING);
     printf("Copyright (C) 2026 Jonny Reckless.\n");
     printf("Free software under the GNU General Public License v3.0 or later (see LICENSE);\n");
     printf("there is NO WARRANTY, to the extent permitted by law.\n\n");
@@ -786,7 +786,7 @@ static void print_notices(void)
     printf("Other notices: the 128-position perft reference counts are Ethereal's standard.epd\n");
     printf("(https://github.com/AndyGrant/Ethereal, GPL-3.0; test data only, no code); the Polyglot key\n");
     printf("constants are the public book-format specification's (http://hgm.nubati.net/book_format.html).\n");
-    printf("The embedded opening book is built from Zenith's own self-play. No third-party code is\n");
+    printf("The embedded opening book is built from Trebuchet's own self-play. No third-party code is\n");
     printf("redistributed: every file of this engine is GPL-3.0-or-later and nothing is vendored. The\n");
     printf("full text of every notice:\n");
     printf("THIRD-PARTY-NOTICES.md, shipped in every release archive.\n");
@@ -983,7 +983,7 @@ int uci_run(Engine *engine, int argc, char **argv)
  * search determinism. They are reproducible on every platform and compiler by construction: the fixed-depth
  * search — including the LMR reduction table, built in Q28 fixed point from the generated LnQ28 table — is
  * pure integer arithmetic with no floating point anywhere. If a search/eval change intentionally moves the
- * signature, re-run `./build/zenith bench` and update these counts.
+ * signature, re-run `./build/trebuchet bench` and update these counts.
  */
 typedef struct
 {

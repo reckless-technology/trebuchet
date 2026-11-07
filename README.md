@@ -1,17 +1,22 @@
-# Zenith
+# Trebuchet
+
+> Trebuchet was briefly called Zenith until 2026-11-06, and was renamed because another chess program already
+> uses that name. Releases up to 3.0.0 and tags up to v3.0 were made under the old name, and version numbering
+> restarted at 1.0 with the new one. The nets `cap1` and `cap2` that these documents mention lived at
+> `nets/zenith-cap1.nnue` and `nets/zenith-cap2.nnue`, and are only in git history now.
 
 An independent UCI chess engine in **C17** — its own search, move generation and data generation,
 written from scratch rather than ported — evaluating with the shared Reckless NNUE network.
 
 The source code was written by Claude Code under the close supervision and direction of Jonny Reckless.
 
-Zenith pairs a modern alpha-beta search — iterative deepening, principal-variation search, a lockless
+Trebuchet pairs a modern alpha-beta search — iterative deepening, principal-variation search, a lockless
 transposition table, the full pruning/reduction stack, and Lazy SMP — with a king-bucketed neural
 network evaluation: the **shared Reckless NNUE**, which every chess engine in the organisation now
-evaluates with, trained on Leela Chess Zero self-play data. The network shape is Zenith's own design,
+evaluates with, trained on Leela Chess Zero self-play data. The network shape is Trebuchet's own design,
 measured here; the weights it ships come from the shared trainer in
 [`nnue-training`](https://github.com/reckless-technology/nnue-training), and the nets it shipped before
-3.0.0 were trained on PlentyChess positions — see
+the release then numbered 3.0.0 were trained on PlentyChess positions — see
 [Provenance of earlier networks](NNUE_TRAINING.md#provenance-of-earlier-networks).
 
 Goals for the project were:
@@ -37,17 +42,17 @@ are the `setup environment` and `check environment` tasks. There is no training 
 more — the trainers live in `nnue-training`, which carries its own `pytorch/requirements.txt`.
 
 ```bash
-make                 # -> ./build/zenith        (release: clang -std=c17, -O3 -flto -march=native, whole-program LTO)
+make                 # -> ./build/trebuchet        (release: clang -std=c17, -O3 -flto -march=native, whole-program LTO)
 make ARCH=x86-64-v2  # portable release build: override the default -march=native (see .github/workflows/release.yml)
-make debug           # -> ./build/zenith-debug  (AddressSanitizer + UBSan, -O1 -g; use for movegen/make_move work)
-make pext            # -> ./build/zenith-pext   (BMI2 PEXT sliding attacks; bit-identical, ~2% faster on Haswell+/Zen3+)
-make datagen         # -> ./build/zenith-datagen + ./build/zenith-bullet2text (standalone NNUE training-data tools)
+make debug           # -> ./build/trebuchet-debug  (AddressSanitizer + UBSan, -O1 -g; use for movegen/make_move work)
+make pext            # -> ./build/trebuchet-pext   (BMI2 PEXT sliding attacks; bit-identical, ~2% faster on Haswell+/Zen3+)
+make datagen         # -> ./build/trebuchet-datagen + ./build/trebuchet-bullet2text (standalone NNUE training-data tools)
 make datagen-debug   # -> ASan+UBSan builds of both datagen tools (they live outside src/, so `make debug` skips them)
 make check           # build + run every correctness gate (mirrors CI; see Verify below)
 make coverage        # line coverage of src/ by those gates, failing under 90 % (LLVM source-based; see Verify below)
 make perft           # build + run the perft movegen gate
 make bench           # build + run the fixed-depth node-signature benchmark
-make baseline        # snapshot the current ./build/zenith -> ./build/zenith-base (the SPRT reference binary)
+make baseline        # snapshot the current ./build/trebuchet -> ./build/trebuchet-base (the SPRT reference binary)
 make get-book        # download a free Polyglot opening book -> books/ (gitignored); prints the setoption lines
 make tables          # regenerate the committed constant tables (src/generated/*.inc: Zobrist, Q28 ln,
                      #   bitboard geometry, magic multipliers) — a
@@ -56,13 +61,13 @@ make format          # clang-format all sources in place (src/ and datagen/) —
 make hooks           # install the clang-format pre-commit hook (once per clone; core.hooksPath -> .githooks)
 make doc             # -> doc/html/index.html (Doxygen API reference)
 make clean           # remove build outputs (binaries + doc/html)
-./build/zenith       # interactive UCI (prints "Zenith <major>.<minor>.<build>"; see Versions and releases)
+./build/trebuchet       # interactive UCI (prints "Trebuchet <major>.<minor>.<build>"; see Versions and releases)
 ```
 
 **Windows** builds natively in [MSYS2](https://www.msys2.org/)'s CLANG64 environment, as CI's Windows job does:
 install MSYS2 at `C:\msys64`, then `pacman -S --needed mingw-w64-clang-x86_64-clang mingw-w64-clang-x86_64-lld
 mingw-w64-clang-x86_64-python make git` (and `mingw-w64-clang-x86_64-gdb` to debug), and every target above runs as written
-from a CLANG64 shell, `make debug`'s AddressSanitizer and UBSan included. The binaries are `build/zenith.exe` and
+from a CLANG64 shell, `make debug`'s AddressSanitizer and UBSan included. The binaries are `build/trebuchet.exe` and
 friends; they load `libwinpthread-1.dll` (and the debug build the ASan runtime) from `C:\msys64\clang64\bin`, which a
 CLANG64 shell has on its PATH. MSVC is not supported.
 
@@ -72,7 +77,7 @@ through CodeLLDB on macOS), and `.vscode/c_cpp_properties.json` gives IntelliSen
 
 ## Usage
 
-Zenith is a UCI engine: it speaks the protocol on standard input and output and draws nothing itself, so it is
+Trebuchet is a UCI engine: it speaks the protocol on standard input and output and draws nothing itself, so it is
 normally run by a host - [Reckless Amphitheater](https://github.com/reckless-technology/amphitheater-chess), or any
 other UCI GUI - which is given the path to the binary and starts it. Everything it needs is inside that one file:
 the network and the opening book are embedded, so there is nothing to install beside it and nothing to configure
@@ -81,7 +86,7 @@ before it will play.
 Driven by hand, the shortest useful session is:
 
 ```
-./build/zenith
+./build/trebuchet
 uci                                   # it answers with its name, its options, then uciok
 position startpos moves e2e4 e7e5
 go movetime 1000                      # or: go depth 12 / go nodes 1000000 / go wtime 300000 btime 300000
@@ -102,7 +107,7 @@ setoption name Hash value 256
 |---|---|---|
 | `Hash` | 64 | The transposition table, in MB, 1 to 65536. More helps a long search and a slow time control most. |
 | `Threads` | as many as the machine reports | Search threads, 1 to 256. The table is shared and everything else is per thread. **A score is only reproducible at `Threads 1`**: above that the threads race through the shared table, so the same search can return a different score each time. |
-| `Move Overhead` | 20 | Milliseconds held back from every move, for the time a host and the pipe between you take. Raise it if Zenith loses on time over a network. |
+| `Move Overhead` | 20 | Milliseconds held back from every move, for the time a host and the pipe between you take. Raise it if Trebuchet loses on time over a network. |
 | `Clear Hash` | - | Empties the table. A host sends `ucinewgame` between games, which does the same thing. |
 | `EvalFile` | `<embedded>` | A network file to use instead of the embedded one. It passes the same container checks, and the same net loaded this way searches exactly as the embedded one does. |
 | `OwnBook` | **false** | Whether to play from an opening book at all. Off by default, deliberately: testing always runs bookless, so a measurement is of the search and not of the book. |
@@ -119,12 +124,12 @@ signature and the engine no longer matches the number its own release asserts.
 The same binary answers a few commands as arguments rather than over the protocol:
 
 ```sh
-./build/zenith bench [depth]          # fixed-depth search: the node signature, and nps. No depth = the pinned one
-./build/zenith license                # the licence and the third-party notices
-./build/zenith moves "<fen>"          # every legal move, in UCI notation
-./build/zenith san "<fen>" <uci...>   # those moves written in SAN
-./build/zenith applymoves "<fen>" [uci...]   # the FEN they lead to
-./build/zenith polykey "<fen>"        # the position's Polyglot book key, 16 hex digits
+./build/trebuchet bench [depth]          # fixed-depth search: the node signature, and nps. No depth = the pinned one
+./build/trebuchet license                # the licence and the third-party notices
+./build/trebuchet moves "<fen>"          # every legal move, in UCI notation
+./build/trebuchet san "<fen>" <uci...>   # those moves written in SAN
+./build/trebuchet applymoves "<fen>" [uci...]   # the FEN they lead to
+./build/trebuchet polykey "<fen>"        # the position's Polyglot book key, 16 hex digits
 ```
 
 `bench` is the one worth knowing: its node count is deterministic at a fixed depth, so it is both a speed
@@ -140,16 +145,16 @@ the full suite on release candidates. Any failure aborts non-zero.
 
 ```bash
 make check                          # build + run every gate below
-./build/zenith perft                # movegen vs known counts: canonical + ep/castling/promotion catchers + Ethereal 128
-./build/zenith bench 13             # deterministic fixed-depth node signature (guards search behaviour) + nps
-./build/zenith legalcheck           # the copy-free legality/check predicates == copy-make ground truth over a perft walk
-./build/zenith seecheck             # static exchange evaluation vs hand-verified capture positions
-./build/zenith fuzzcheck            # malformed-FEN/UCI hardening (memory safety; run the `make debug` build under ASan)
-./build/zenith nnuecheck <net.nnue> # incremental accumulator == full refresh, bit-identical
-./build/zenith bookcheck            # Polyglot key computation vs the 9 official spec test vectors
-./build/zenith license              # GPL notice + the ODbL 1.0 attribution the embedded net's training data owes
-./build/zenith embookcheck          # the build-time-embedded book: blob, entry invariants, probe path
-python3 tools/uci_check.py ./build/zenith  # the UCI front end through pipes (below)
+./build/trebuchet perft                # movegen vs known counts: canonical + ep/castling/promotion catchers + Ethereal 128
+./build/trebuchet bench 13             # deterministic fixed-depth node signature (guards search behaviour) + nps
+./build/trebuchet legalcheck           # the copy-free legality/check predicates == copy-make ground truth over a perft walk
+./build/trebuchet seecheck             # static exchange evaluation vs hand-verified capture positions
+./build/trebuchet fuzzcheck            # malformed-FEN/UCI hardening (memory safety; run the `make debug` build under ASan)
+./build/trebuchet nnuecheck <net.nnue> # incremental accumulator == full refresh, bit-identical
+./build/trebuchet bookcheck            # Polyglot key computation vs the 9 official spec test vectors
+./build/trebuchet license              # GPL notice + the ODbL 1.0 attribution the embedded net's training data owes
+./build/trebuchet embookcheck          # the build-time-embedded book: blob, entry invariants, probe path
+python3 tools/uci_check.py ./build/trebuchet  # the UCI front end through pipes (below)
 ```
 
 `tools/uci_check.py` tests what a GUI, the book builder or a test harness talks to, by running the binary as they
@@ -171,10 +176,10 @@ instrumented engine (`-fprofile-instr-generate -fcoverage-mapping`, `-O2 -g`, th
 book) into `build/cov/`, runs every `make check` gate against it - nnuecheck included, and the front-end gate with
 `--terminal`, which on Linux and macOS also runs legalcheck on a pseudo-terminal to test its in-place progress line -
 plus CI's threaded UCI smoke, every process merging its counts into one profile under a file lock
-(`LLVM_PROFILE_FILE=build/cov/zenith-%m.profraw`: a file per pid lost profiles on Windows, which reuses pids within a
+(`LLVM_PROFILE_FILE=build/cov/trebuchet-%m.profraw`: a file per pid lost profiles on Windows, which reuses pids within a
 run), then prints `llvm-cov report` over `src/`, leaving `build/cov/lcov.info` and `build/cov/html/index.html` beside
 it. The figure is `src/` alone - the engine every release ships, its UCI front end and its headers; the developer
-tools no release ships, `datagen/` (zenith-datagen, bullet2text) and `tools/`, are not measured. The bench
+tools no release ships, `datagen/` (trebuchet-datagen, bullet2text) and `tools/`, are not measured. The bench
 gate still holds its node signature: instrumentation counts and changes nothing the search computes. It needs clang
 with its profile runtime and `llvm-profdata` / `llvm-cov`: Xcode's through `xcrun` on macOS, MSYS2 CLANG64's
 `llvm-tools` on Windows (`tools/setup-dev.ps1` installs them), and on Linux `llvm-profdata` on the PATH or, failing
@@ -201,13 +206,15 @@ The version is `MAJOR.MINOR.BUILD`, from git alone, the rule all of reckless-tec
 - `BUILD` is the number of commits since that tag, the tagged commit itself being 0.
 
 `tools/version.sh` works it out (`git describe --tags --match 'v*.*' --exclude 'v*.*.*'`). The `Makefile` compiles it in
-as `ZENITH_VERSION_STRING`, and rebuilds when it changes. The engine reports it: `id name Zenith 2.0.0`, and in the
+as `TREBUCHET_VERSION_STRING`, and rebuilds when it changes. The engine reports it: `id name Trebuchet 1.0.0`, and in the
 banner. Nothing in the tree holds a version to edit, so no version-bump commit follows a release. A tree with no mark
-reachable (a source tarball, a shallow clone, a fork without the tags) builds as `0.0.0`.
+reachable (a source tarball, a shallow clone, a fork without the tags) builds as `0.0.0`. The marks up to `v3.0`, from
+before the rename, stay reachable from every later commit: `git describe` takes the nearest mark by commits and not
+the highest number, so `v1.0` and the marks after it decide the version.
 
 `.github/workflows/release.yml` makes a release:
 
-- **Pushing a mark** (`git tag -a v2.1 -m "Zenith 2.1" && git push origin v2.1`) releases `2.1.0`.
+- **Pushing a mark** (`git tag -a v1.1 -m "Trebuchet 1.1" && git push origin v1.1`) releases `1.1.0`.
 - **Running it by hand** on `main` (`gh workflow run release.yml --ref main`) releases `main`'s head as
   `MAJOR.MINOR.BUILD`. `-f dry_run=true`, from any branch, builds, tests and signs the macOS engine but publishes
   nothing.
@@ -220,10 +227,10 @@ must report the version. The workflow creates the release
 
 | File | What it is |
 |---|---|
-| `zenith-v<version>-windows-x86-64-v2.zip`, `-windows-x86-64-v3-pext.zip` | `zenith.exe` Authenticode-signed through SSL.com eSigner (Jonathan Reckless) |
-| `zenith-v<version>-macos-arm64.zip` | the engine for Apple silicon, signed with a Developer ID (hardened runtime) and notarised by Apple |
-| `zenith-v<version>-linux-x86-64-v2.tar.gz`, `-linux-x86-64-v3-pext.tar.gz` | the engine for Linux |
-| `zenith-v<version>-SHA256SUMS.txt` | the checksums of every archive |
+| `trebuchet-v<version>-windows-x86-64-v2.zip`, `-windows-x86-64-v3-pext.zip` | `trebuchet.exe` Authenticode-signed through SSL.com eSigner (Jonathan Reckless) |
+| `trebuchet-v<version>-macos-arm64.zip` | the engine for Apple silicon, signed with a Developer ID (hardened runtime) and notarised by Apple |
+| `trebuchet-v<version>-linux-x86-64-v2.tar.gz`, `-linux-x86-64-v3-pext.tar.gz` | the engine for Linux |
+| `trebuchet-v<version>-SHA256SUMS.txt` | the checksums of every archive |
 
 Each archive holds the engine, `README.md`, `LICENSE` and `THIRD-PARTY-NOTICES.md`. `x86-64-v2` runs on
 essentially any modern x86-64;
@@ -279,7 +286,7 @@ PRNG — before any thread exists.
   feature-column reads dominate, and unmake would double them to save a cheap copy.)
 - **Sliding attacks** via **magic bitboards**: the multipliers are generated offline (`make tables`) and
   the attack tables filled deterministically at startup — portable, instant init. `make pext`
-  (`ZENITH_USE_PEXT`) swaps in a BMI2 `_pext_u64` index instead: bit-identical output, ~2% faster on Intel
+  (`TREBUCHET_USE_PEXT`) swaps in a BMI2 `_pext_u64` index instead: bit-identical output, ~2% faster on Intel
   Haswell+/AMD Zen3+, but microcoded-slow on AMD Zen1/2 — so magic is the portable default and PEXT is
   opt-in for fast-BMI2 release builds.
 
@@ -358,18 +365,18 @@ only - no engine or search state is read or written.
 
 **The trainers live in [`nnue-training`](https://github.com/reckless-technology/nnue-training)** — the
 single source for the Reckless NNUE: the architecture, the king-bucket map, the `RNNUE1` container, both
-trainers and the data pipeline. Zenith is one of its consumers, and the split is *producer asserts,
+trainers and the data pipeline. Trebuchet is one of its consumers, and the split is *producer asserts,
 consumer verifies* — that repository asserts what a net is, and this engine checks every header field
 against its own compiled constants and refuses loudly, with no fallback, on a mismatch. What lives here
 is the loader (`src/nnue.*`), the net tools in `tools/`, and the engine-side gates.
 
 So the pipeline is `datagen` (or an external dataset via `bullet2text`) → the shared trainer → a quantised
 `.nnue` in the `RNNUE1` container (`tools/stamp_net.py`) → the engine loader. The shipped net need not come
-from Zenith's own data: any net of the shared shape loads, and **the net shipped from
-3.0.0, `nets/reckless-lc0-runf-sb870.nnue`, is trained entirely on Leela Chess Zero self-play data**, from
+from Trebuchet's own data: any net of the shared shape loads, and **the net shipped since the
+release then numbered 3.0.0, `nets/reckless-lc0-runf-sb870.nnue`, is trained entirely on Leela Chess Zero self-play data**, from
 the shared Reckless NNUE pipeline — data published under the **Open Database License 1.0**, whose
 attribution notice is in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) and printed by
-`./build/zenith license`. The nets up to `zenith-cap2` were trained on **PlentyChess**
+`./build/trebuchet license`. The nets up to `cap2` were trained on **PlentyChess**
 positions — see [Provenance of earlier networks](NNUE_TRAINING.md#provenance-of-earlier-networks).
 
 The single source of truth for the feature indexing and quantisation contract is `nnue-training`'s
@@ -381,30 +388,30 @@ tools here import it and must run on a CI runner with no network: change it in b
 
 ```bash
 # the engine's side: data in, net verified and gated here
-make datagen         # -> ./build/zenith-datagen + ./build/zenith-bullet2text
-./build/zenith-bullet2text <shard.data> data/bullet/shard.txt 0 4   # bulletformat -> text
-tools/datagen_parallel.sh 20000 data/run1 32 5000 8                 # or Zenith's own self-play
-./build/zenith nnuecheck nets/zenith.nnue                           # incremental == full refresh
+make datagen         # -> ./build/trebuchet-datagen + ./build/trebuchet-bullet2text
+./build/trebuchet-bullet2text <shard.data> data/bullet/shard.txt 0 4   # bulletformat -> text
+tools/datagen_parallel.sh 20000 data/run1 32 5000 8                    # or Trebuchet's own self-play
+./build/trebuchet nnuecheck nets/trebuchet.nnue                        # incremental == full refresh
 # the 0-cp contract gate, run from a nnue-training clone:
-python3 pytorch/verify.py --net nets/zenith.nnue --fens <fens> --engine /path/to/zenith/build/zenith
+python3 pytorch/verify.py --net nets/trebuchet.nnue --fens <fens> --engine /path/to/trebuchet/build/trebuchet
 ```
 
-`./build/zenith-datagen` generates the engine's own self-play data (`fen;stm_score;wdl` records) across all
+`./build/trebuchet-datagen` generates the engine's own self-play data (`fen;stm_score;wdl` records) across all
 cores via `tools/datagen_parallel.sh`; `bullet2text` converts a bulletformat dataset to the same text.
 
 ## Opening book
 
 Standard **Polyglot** `.bin` books are supported (`src/book.c`; the Polyglot Zobrist key computation is
-validated against the official spec vectors by `./build/zenith bookcheck`). The repo ships Zenith's own
-book, `books/zenith-book-r5.bin` (487KB, ~14,000 positions) — built entirely from Zenith self-play by
+validated against the official spec vectors by `./build/trebuchet bookcheck`). The repo ships Trebuchet's own
+book, `books/trebuchet-book-r5.bin` (487KB, ~14,000 positions) — built entirely from Trebuchet self-play by
 `tools/build_book.py` (screen/rescore every move with the engine, self-play playouts for near-ties, negamax
 backup over the position DAG), worth ~+30 Elo of clock savings and opening variety in self-play gates.
-Beyond the moves Zenith plays, it carries **opponent coverage**: prepared replies to plausible moves
-Zenith would not choose itself (1. d4, 1. c4, and ~14k others), so it stays in book against foreign
+Beyond the moves Trebuchet plays, it carries **opponent coverage**: prepared replies to plausible moves
+Trebuchet would not choose itself (1. d4, 1. c4, and ~14k others), so it stays in book against foreign
 repertoires. r5 is the builder's r4 with one move added by hand (`tools/add_book_moves.py`): 1. d4 at the root,
-weight 42 beside 1. e4's 115 and 1. c4's 54, so Zenith opens 1. d4 about a fifth of the time (42 / 211) and
-plays on into the ~2,100 positions r4 already held after it. The builder's `zenith-book-r4.bin` and the earlier,
-coverage-free `zenith-book-r3.bin` are retained alongside.
+weight 42 beside 1. e4's 115 and 1. c4's 54, so Trebuchet opens 1. d4 about a fifth of the time (42 / 211) and
+plays on into the ~2,100 positions r4 already held after it. The builder's `trebuchet-book-r4.bin` and the earlier,
+coverage-free `trebuchet-book-r3.bin` are retained alongside.
 Inspect it with `tools/show_book.py` (one SAN line of play per row). The book is **embedded in every
 binary** (like the net), so `setoption name OwnBook value true` alone enables it — no BookFile needed;
 `BookFile` loads an external book instead. OwnBook stays **off by default**: testing is bookless.
@@ -420,17 +427,18 @@ setoption name OwnBook value true          # default false — testing always ru
 
 ## Provenance & attribution
 
-Zenith is written from scratch and shares no source code with any other engine. It uses the same
+Trebuchet is written from scratch and shares no source code with any other engine. It uses the same
 published, textbook techniques every strong engine does — bitboards, magic bitboards, PVS, transposition
 tables, null-move/LMR/futility pruning, SEE, NNUE, Lazy SMP (see the
 [Chess Programming Wiki](https://www.chessprogramming.org)) — implemented independently.
 
-- **NNUE network:** the shape Zenith designed and measured (king-bucketed, horizontally-mirrored
+- **NNUE network:** the shape Trebuchet designed and measured (king-bucketed, horizontally-mirrored
   768×8→1024→8 SCReLU), now the **shared Reckless NNUE** that every engine in the organisation evaluates with,
-  in the `RNNUE1` container they all read. **The network shipped from 3.0.0
+  in the `RNNUE1` container they all read. **The network shipped since the release then numbered 3.0.0
   (`nets/reckless-lc0-runf-sb870.nnue`) is trained entirely on Leela Chess Zero self-play data**, and comes
   from the shared Reckless NNUE training pipeline (`nnue-training`) rather than from any trainer of
-  Zenith's own — which is why it does not carry a `zenith-` name. No other engine's **code** is included or derived.
+  this engine's own — which is why its file name says `reckless-lc0`, the pipeline and the data, and not this
+  engine's. No other engine's **code** is included or derived.
 
   **Training-data attribution (ODbL 1.0).** That data is published at
   <https://storage.lczero.org/files/training_data/> under the **Open Database License 1.0**, with its
@@ -448,9 +456,9 @@ tables, null-move/LMR/futility pruning, SEE, NNUE, Lazy SMP (see the
   The pool was 62.83 % `test91` and 37.17 % `test60`. The obligation is **the notice**: ODbL does *not*
   require the network to be ODbL-licensed, and the network is *not* GPL merely because GPLv3 code trained it
   or reads it. The full notice, and every other notice this engine owes, is in
-  [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md); `./build/zenith license` prints it from the binary.
+  [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md); `./build/trebuchet license` prints it from the binary.
 
-  **Provenance of earlier networks.** Zenith networks up to and including **zenith-cap2** were trained on
+  **Provenance of earlier networks.** This engine's networks up to and including **cap2** were trained on
   positions from a public self-play dataset generated by **PlentyChess**, by Yoshie2000 — up to 2.15
   billion positions. That data is no longer used, and those nets are no longer in the tree, so no release
   ships one. The attribution is kept here deliberately: those networks were measurably stronger for having
@@ -458,8 +466,8 @@ tables, null-move/LMR/futility pruning, SEE, NNUE, Lazy SMP (see the
   measurement as it was made, is in
   [NNUE_TRAINING.md](NNUE_TRAINING.md#provenance-of-earlier-networks).
 - **Opening book:** the Polyglot key constants come from the public
-  [book-format specification](http://hgm.nubati.net/book_format.html); the book Zenith ships and embeds,
-  `books/zenith-book-r5.bin`, is built entirely from Zenith's own self-play, and no third-party book is
+  [book-format specification](http://hgm.nubati.net/book_format.html); the book Trebuchet ships and embeds,
+  `books/trebuchet-book-r5.bin`, is built entirely from Trebuchet's own self-play, and no third-party book is
   bundled.
 - **Every notice in one place:** [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) — the ODbL training-data
   notice, the Ethereal perft reference counts, the Polyglot format specification, and the earlier networks'
@@ -467,12 +475,12 @@ tables, null-move/LMR/futility pruning, SEE, NNUE, Lazy SMP (see the
 
 ## License
 
-Zenith is free software licensed under the **GNU General Public License v3.0 or later** (see
+Trebuchet is free software licensed under the **GNU General Public License v3.0 or later** (see
 [LICENSE](LICENSE)). Copyright © 2026 Jonny Reckless. You may use, modify, and redistribute it under the
 terms of the GPL; derivative works must remain open under the same license.
 
 Third-party notices are in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md), which ships in every release
-archive and is printed by `./build/zenith license`. Chief among them: the network embedded in every binary
+archive and is printed by `./build/trebuchet license`. Chief among them: the network embedded in every binary
 was trained on Leela Chess Zero self-play data, published under the **Open Database License 1.0**, and
 distributing the network obliges the attribution notice that file carries. The network is not itself
 ODbL-licensed and is not GPL.

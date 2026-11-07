@@ -4,7 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-Zenith is a from-scratch UCI chess engine in **C17** (~5,300 lines, `src/*.{h,c}`; ported from the original
+This engine was called Zenith until 2026-11-06: see the note at the top of [README.md](README.md).
+
+Trebuchet is a from-scratch UCI chess engine in **C17** (~5,300 lines, `src/*.{h,c}`; ported from the original
 C++20, preserved at git tag `cpp-final`). It is feature-complete: king-bucketed NNUE, Lazy SMP, an
 SPSA-tuned search, and a Polyglot opening book — and it beats its reference engine (pawnstar) at every
 tested configuration. Read [README.md](README.md) for the architecture and
@@ -21,14 +23,14 @@ are the `setup environment` and `check environment` tasks. There is no training 
 more: the trainers live in `nnue-training`, which carries its own `pytorch/requirements.txt`.
 
 ```bash
-make            # -> ./build/zenith   (clang -std=c17, -O3 -flto -march=native, whole-program single-shot compile)
+make            # -> ./build/trebuchet   (clang -std=c17, -O3 -flto -march=native, whole-program single-shot compile)
 make ARCH=x86-64-v2   # portable release build (override the default -march=native; see release workflow)
-make debug      # -> ./build/zenith-debug  (ASan+UBSan, -O1) — use for any movegen/make_move correctness work
-make pext       # -> ./build/zenith-pext  (BMI2 PEXT sliding attacks; bit-identical, ~2% faster on Haswell+/Zen3+)
-make datagen    # -> ./build/zenith-datagen + ./build/zenith-bullet2text  (standalone NNUE training-data tools)
+make debug      # -> ./build/trebuchet-debug  (ASan+UBSan, -O1) — use for any movegen/make_move correctness work
+make pext       # -> ./build/trebuchet-pext  (BMI2 PEXT sliding attacks; bit-identical, ~2% faster on Haswell+/Zen3+)
+make datagen    # -> ./build/trebuchet-datagen + ./build/trebuchet-bullet2text  (standalone NNUE training-data tools)
 make datagen-debug  # -> ASan+UBSan builds of both datagen tools (outside src/, so `make debug` skips them)
 make clean
-./build/zenith        # interactive UCI loop
+./build/trebuchet        # interactive UCI loop
 
 make check             # run EVERY gate below (perft, bench-signature, legalcheck, seecheck, fuzzcheck,
                        #   bookcheck, embookcheck, the UCI front end, nnuecheck) — mirrors CI; any failure aborts
@@ -37,30 +39,30 @@ make coverage          # LLVM source-based line coverage of src/ by those gates 
                        #   report on stdout, build/cov/lcov.info + html/; src/ only — datagen/ and tools/ are
                        #   developer tools no release ships and are not measured; needs llvm-profdata/llvm-cov
                        #   (xcrun on macOS, MSYS2 llvm-tools, Linux: on PATH or clang's version, LLVM_SUFFIX=-18)
-python3 tools/uci_check.py ./build/zenith  # the UCI front end through pipes: every option (shown to reach the
+python3 tools/uci_check.py ./build/trebuchet  # the UCI front end through pipes: every option (shown to reach the
                        #   search by a fixed-depth node count), position/go forms, crafted books, moves/polykey/san/
                        #   applymoves vs hand-verified answers, nnueeval + loader verdicts, malformed input;
                        #   --terminal adds legalcheck on a pty (POSIX) for the progress line. A new UCI option or
                        #   subcommand gets a check here, or coverage drops
-./build/zenith perft         # movegen vs known counts (canonical + edge-case catchers + 128-position Ethereal) — PASS
-./build/zenith bench [depth] # fixed-depth node signature + nps (default depth 13); guards search determinism
-./build/zenith legalcheck    # fast legality/check predicates == copy-make ground truth (differential)
-./build/zenith seecheck      # static_exchange_eval vs hand-verified capture positions
-./build/zenith fuzzcheck     # malformed-FEN/UCI hardening (memory-safety gate; run under `make debug` for ASan)
-./build/zenith nnuecheck <net># CRC-64/XZ check value, then incremental accumulator == full refresh
+./build/trebuchet perft         # movegen vs known counts (canonical + edge-case catchers + 128-position Ethereal) — PASS
+./build/trebuchet bench [depth] # fixed-depth node signature + nps (default depth 13); guards search determinism
+./build/trebuchet legalcheck    # fast legality/check predicates == copy-make ground truth (differential)
+./build/trebuchet seecheck      # static_exchange_eval vs hand-verified capture positions
+./build/trebuchet fuzzcheck     # malformed-FEN/UCI hardening (memory-safety gate; run under `make debug` for ASan)
+./build/trebuchet nnuecheck <net># CRC-64/XZ check value, then incremental accumulator == full refresh
 python3 tools/stamp_net.py <net>  # (re)stamp a weight payload into the shared RNNUE1 container
-./build/zenith license       # the GPL notice + the ODbL 1.0 training-data attribution (THIRD-PARTY-NOTICES.md);
-                             #   also a command of the UCI loop, and `licence` either way. The Reckless
-                             #   engines all carry it: a release binary embeds the net, so it embeds the notice
-./build/zenith bookcheck     # Polyglot keys vs the 9 official spec vectors
-./build/zenith embookcheck   # the EMBEDDED book: blob, entry invariants, probe path (11 checks)
-make baseline          # snapshot ./build/zenith -> ./build/zenith-base
-OPENINGS=... tools/sprt.sh [rounds]   # self-play SPRT vs ./build/zenith-base (engines via CAND/BASE, not argv)
+./build/trebuchet license       # the GPL notice + the ODbL 1.0 training-data attribution (THIRD-PARTY-NOTICES.md);
+                                #   also a command of the UCI loop, and `licence` either way. The Reckless
+                                #   engines all carry it: a release binary embeds the net, so it embeds the notice
+./build/trebuchet bookcheck     # Polyglot keys vs the 9 official spec vectors
+./build/trebuchet embookcheck   # the EMBEDDED book: blob, entry invariants, probe path (11 checks)
+make baseline          # snapshot ./build/trebuchet -> ./build/trebuchet-base
+OPENINGS=... tools/sprt.sh [rounds]   # self-play SPRT vs ./build/trebuchet-base (engines via CAND/BASE, not argv)
 make tables            # regenerate src/generated/*.inc (Zobrist/ln/geometry/magic constants) — deliberate
 make format            # clang-format all sources in place
 make hooks             # enable the clang-format pre-commit hook (once per clone; core.hooksPath -> .githooks)
 make get-book          # download a free Polyglot book -> books/ (gitignored); print the setoption lines
-# books/zenith-book-r5.bin (committed) = Zenith's own self-play-built opening book with opponent coverage
+# books/trebuchet-book-r5.bin (committed) = Trebuchet's own self-play-built opening book with opponent coverage
 #   (r4, built by tools/build_book.py) plus 1.d4 at the root (tools/add_book_moves.py), EMBEDDED in every
 #   binary (Makefile BOOK_BIN -> tools/embed_book.py), so `OwnBook true` needs no BookFile; OwnBook stays
 #   false by default — testing is always bookless. Display with tools/show_book.py.
@@ -76,10 +78,12 @@ would commit as itself); direct pushes to main are rejected.
 
 **Versions and releases** (README, "Versions and releases"): the version is `MAJOR.MINOR.BUILD` from git alone - the
 nearest annotated `vMAJOR.MINOR` tag and the commits since it (`tools/version.sh`, compiled in by the Makefile as
-`ZENITH_VERSION_STRING`); nothing in the tree is edited to release and no bump commit follows. Pushing a mark (`v2.1`)
+`TREBUCHET_VERSION_STRING`); nothing in the tree is edited to release and no bump commit follows. The marks up to
+`v3.0` predate the rename and stay (published source offers link to them); `git describe` takes the nearest mark by
+commits and not the highest number, so `v1.0` and the marks after it decide the version. Pushing a mark (`v1.1`)
 runs `.github/workflows/release.yml`: built and gated on Linux, Windows and Apple silicon, the Windows engines
 eSigner-signed (publishing runs only - each signing spends the allowance), the macOS one Developer ID-signed and
-notarised, published as `v2.1.0`. `gh workflow run release.yml --ref <branch> -f dry_run=true` proves a change to it
+notarised, published as `v1.1.0`. `gh workflow run release.yml --ref <branch> -f dry_run=true` proves a change to it
 without publishing or spending a Windows signing.
 
 A versioned pre-commit hook (`.githooks/pre-commit`, enabled via `make hooks`) rejects commits whose staged
@@ -87,13 +91,13 @@ A versioned pre-commit hook (`.githooks/pre-commit`, enabled via `make hooks`) r
 
 **Use clang-format 22.1.8.** `make format` runs whatever `clang-format` is first on your PATH, and the
 major version matters: a different one restyles code that is already correct, and then the hook refuses
-files that were fine. The organisation standardised on 22.1.8 on 2026-09-26 (Zenith's tree measured clean
+files that were fine. The organisation standardised on 22.1.8 on 2026-09-26 (Trebuchet's tree measured clean
 under it, so no reformat was needed here; apt's `clang-format-18` is *not* it, and on Linux `~/.local/bin`
 must precede `/usr/bin` for the right one to win). See `reckless-technology/claude-skills`, skill
 `reckless-working-practice`.
 
 **The Windows engines link MSYS2's runtime statically** (`RELEASE_LDFLAGS`, `-static` where `OS` is `Windows_NT`, on
-`build/zenith` and `build/zenith-pext` alone): CLANG64's `-pthread` is `libwinpthread-1.dll`, and an engine importing
+`build/trebuchet` and `build/trebuchet-pext` alone): CLANG64's `-pthread` is `libwinpthread-1.dll`, and an engine importing
 it does not start on a Windows without MSYS2 (0xC0000135). They import `KERNEL32.dll` and the UCRT's
 `api-ms-win-crt-*.dll` API sets, Windows' own from Windows 10 on; `tools/windows-dependents.ps1` reads the PE import
 tables itself and fails CI's Windows build and the release's on any other DLL.
@@ -103,7 +107,7 @@ object files or per-file targets. `-march=native` is dev-only; a real release fa
 `tools/sprt.sh` runs **fastchess** (cutechess-cli is not installed here) with an openings EPD. **`OPENINGS`
 is required and has no default** - no opening set ships here, and `books/`'s Polyglot `.bin` files are not
 one. Tune via `TC` / `ELO0` / `ELO1` / `CONCURRENCY` / `HASH`. The script **pins `Threads=1`, `Hash`
-(16 MB) and `OwnBook=false` per engine**: zenith's own Threads default is `platform_cpu_count() / 2`, so an
+(16 MB) and `OwnBook=false` per engine**: trebuchet's own Threads default is `platform_cpu_count() / 2`, so an
 unpinned harness plays multi-threaded engines at a concurrency also sized from `nproc` and measures
 scheduler noise. `CONCURRENCY` defaults to one game per physical core less one (`nproc / 2 - 1`, SMT
 assumed).
@@ -111,8 +115,8 @@ assumed).
 ## The testing discipline (this is the point of the project)
 
 No strength change lands on intuition. Every change to search/eval must:
-1. keep `./build/zenith perft` passing (movegen invariant — never regress this),
-2. produce a new, deterministic `./build/zenith bench` node signature, and
+1. keep `./build/trebuchet perft` passing (movegen invariant — never regress this),
+2. produce a new, deterministic `./build/trebuchet bench` node signature, and
 3. pass a self-play **SPRT** vs the prior baseline (`tools/sprt.sh`).
 
 When you touch search or eval, expect to run all three. Perft and bench are fast local gates; SPRT is the
@@ -140,7 +144,7 @@ after; kept file-scope because they sit on the hottest loads (see `bitboard.h`).
   the `<bit>`-based bitboard helpers (`lsb`/`pop_lsb`/per-direction `shift`/file+rank masks).
 - **bitboard.\*** — generated-const pawn/knight/king attacks + `BetweenBB`/`LineBB`; sliding attacks via
   **magic bitboards** (`bishop_attacks`/`rook_attacks`) whose multipliers are generated offline and whose
-  tables are filled deterministically at startup. Portable. A `ZENITH_USE_PEXT` compile
+  tables are filled deterministically at startup. Portable. A `TREBUCHET_USE_PEXT` compile
   switch (`make pext`) swaps the magic multiply-shift index for a BMI2 `_pext_u64` — bit-identical output
   (same bench signature), ~2% faster perft on Intel Haswell+/AMD Zen3+, but microcoded-slow on AMD Zen1/2,
   so magic stays the portable default and PEXT is opt-in for the fast-BMI2 microarch release variants.
@@ -190,9 +194,9 @@ after; kept file-scope because they sit on the hottest loads (see `bitboard.h`).
 - **datagen/** (top-level, outside `src/` and the engine binary) — the NNUE training-data tools, built by
   `make datagen` into two standalone executables (each has its own small `main`; both compile the engine core
   `src/*.c` minus `src/main.c` in the same single-shot whole-program style):
-  `./build/zenith-datagen <games> <out> [seed] [nodes] [openingPlies]` self-plays from random openings and
+  `./build/trebuchet-datagen <games> <out> [seed] [nodes] [openingPlies]` self-plays from random openings and
   emits `fen;stm_score_cp;wdl` records (one per quiet position; fan out with `tools/datagen_parallel.sh`),
-  and `./build/zenith-bullet2text <in.data> <out.txt> [maxRecords] [stride]` converts bulletformat binpacks
+  and `./build/trebuchet-bullet2text <in.data> <out.txt> [maxRecords] [stride]` converts bulletformat binpacks
   to the same text.
 - **tt.\*** — global, **lockless** for Lazy SMP: 16-byte `{key^data, data}` slots with the XOR torn-read
   guard, relaxed atomics, bit-field payload (`TTData`, signed depth), depth-preferred replacement with
@@ -231,25 +235,25 @@ detection breaks.
 out-of-line `is_checkmated`) before `position_is_draw` can call it the fifty-move draw, so a mate on the hundredth ply
 is found and played. `tools/uci_check.py` holds it ("mate on the 100th ply").
 
-## NNUE training pipeline (the trainer is shared; the loader and its gates are Zenith's)
+## NNUE training pipeline (the trainer is shared; the loader and its gates are Trebuchet's)
 
 `datagen` (C) → the shared trainer in **[`nnue-training`](https://github.com/reckless-technology/nnue-training)**
 → quantised `.nnue` → `src/nnue.c` (engine). `data/` and `nets/` are gitignored.
 
 **`nnue-training` is the single source for the NNUE** — the architecture, the king-bucket map, the
-`RNNUE1` container, both trainers (bullet and PyTorch) and the data pipeline. Zenith is a consumer of it.
+`RNNUE1` container, both trainers (bullet and PyTorch) and the data pipeline. Trebuchet is a consumer of it.
 The split is **producer asserts, consumer verifies**: the trainer asserts what a net is, and this engine
 verifies every header field against its own compiled constants and refuses loudly with no fallback. So
 what lives here is the **loader** (`src/nnue.*`, with `src/crc64.h`), the stamper and net tools in
 `tools/`, and the gates that answer the one question only this engine can — does this net load *and play*
-here. Zenith's `trainer/` directory is **gone** (2026-10-31): its four files were byte-identical, or
+here. Trebuchet's `trainer/` directory is **gone** (2026-10-31): its four files were byte-identical, or
 one import line away from byte-identical, to `nnue-training`'s `spec/rnnue1.py` and its
 `pytorch/features.py`, `train.py` and `verify.py` — exactly the duplication that repository exists to end. The venv and
 `tools/setup-dev --training` went with it; make the training environment in a `nnue-training` clone, from
 its own `pytorch/requirements.txt`.
 
 **The one deliberate copy** is `tools/rnnue1.py`, verbatim `nnue-training/spec/rnnue1.py` (SHA-256
-`90472ea1863cd394faac23f8175761bbc9003bda36ccf75ba6f747e5d116e3fa`) — **change it in both or in neither,
+`e226c64b32bb79dd85613048816fc57d378c6b3dcdb620d2f55a8b61228e2683`) — **change it in both or in neither,
 because the copies agreeing is the audit**, the same arrangement the three pawnstar repositories have
 with `new-shape-signature.sh`. It is here because three of this repo's own tools import it and must run
 on a GitHub-hosted runner with no network and no trainer environment: `tools/make_test_net.py` (CI's
@@ -257,42 +261,43 @@ synthetic net, two jobs), `tools/uci_check.py` (an independent reader of the hea
 engine's loader against), and `tools/stamp_net.py`, which writes a header from those constants and never
 from an argument. It is stdlib-only for exactly that reason.
 
-The shape is Zenith's (mirroring and output buckets were measured here) and the container is pawnstar's,
+The shape is Trebuchet's (mirroring and output buckets were measured here) and the container is pawnstar's,
 shared with every other Reckless chess engine (Jonny, 2026-10-27; skill `reckless-nnue`), so an
 architecture change here is a change owed to all of them — see
-`.claude/memory/zenith-goal-independence.md` for what that supersedes and why.
+`.claude/memory/trebuchet-goal-independence.md` for what that supersedes and why.
 
 - **The contract is `nnue-training`'s `pytorch/features.py`** — feature indexing + quantisation (QA=255,
   QB=64, scale=400, king-bucketed 768×8→1024→8 output heads, horizontal king mirroring, SCReLU).
   `src/nnue.c` must reproduce `feature_index`, `king_bucket`, `king_mirror`, `output_bucket`, and
   `integer_eval` **byte-for-byte**; how a net is trained is that repository's document, not this one.
-  **The embedded net from 3.0.0 is `nets/reckless-lc0-runf-sb870.nnue`**, trained
+  **The embedded net, since the release then numbered 3.0.0, is `nets/reckless-lc0-runf-sb870.nnue`**, trained
   entirely on **Leela Chess Zero self-play data** in the shared Reckless NNUE pipeline
-  — hence no `zenith-` prefix. Its strength in Zenith is **NOT YET MEASURED**: it loads unchanged
+  — hence a name that says the pipeline and the data, not this engine's. Its strength in Trebuchet is **NOT YET MEASURED**: it loads unchanged
   (same shape and container; `nnuecheck` and the shared `verify.py` clean) and moves the bench signature
   1,390,606 -> **1,653,778**, which is an eval change, not a strength result. Figures measured for this net
   in pawnstar are pawnstar's and do not transfer. **The swap did not wait on that measurement**: the nets
-  up to `zenith-cap2` were trained on **PlentyChess** self-play positions (by Yoshie2000, up to 2.15B),
+  up to `cap2` were trained on **PlentyChess** self-play positions (by Yoshie2000, up to 2.15B),
   that data is no longer used, and removing the dependency is the point — so the match says what the
-  change cost, not whether to make it. **`nets/zenith-cap1.nnue` and `nets/zenith-cap2.nnue` are REMOVED
-  from the tree** at 3.0.0 (git history preserves them); the only net in `nets/` is the 3.0.0 one, and
+  change cost, not whether to make it. **`cap1` and `cap2` are REMOVED
+  from the tree** as of the release then numbered 3.0.0 (git history preserves them, README.md's note says
+  where); the only net in `nets/` is that release's, and
   nothing may point a build or a fixture at a PlentyChess-derived net again. The attribution stays in the
   documents deliberately — those nets were measurably stronger for that data; see NNUE_TRAINING.md
   "Provenance of earlier networks". `datagen` trained only the `v1`-`v5` pilots and the opening book.
-  `zenith-cap2` = cap1's 1024-wide architecture retrained on **2.15B** of those positions: **+10 Elo
+  `cap2` = cap1's 1024-wide architecture retrained on **2.15B** of those positions: **+10 Elo
   fixed-depth SPRT over cap1**, val loss 0.013746 — every such measurement stands as made.
   Lineage, all on PlentyChess data: kb2 (+57, 650M) -> kb3 (+8, 1.4B) -> ob2
   (+14.7, output buckets) -> km1 (+14.3, mirroring) -> cap1 (+14.7 timed, 1024 hidden) -> cap2 (+10, 2.15B
   data). Data returns REOPENED at 1024 hidden after saturating at 512. Superseded nets are deleted from the tree once incompatible with the
   shipped engine's architecture (git history preserves them); the loader refuses a mismatch by name, from
   the header's own fields, rather than inferring it from a file's length.
-- **Verification gate (never skip):** `nnue-training`'s `pytorch/verify.py --engine ./build/zenith` runs
+- **Verification gate (never skip):** `nnue-training`'s `pytorch/verify.py --engine ./build/trebuchet` runs
   `nnueeval` and diffs against the Python reference — must be **0 cp** (bit-identical). Also check
-  symmetry: `eval(pos) == eval(color-mirror)`. `./build/zenith nnuecheck <net>` is the engine-side gate
+  symmetry: `eval(pos) == eval(color-mirror)`. `./build/trebuchet nnuecheck <net>` is the engine-side gate
   and runs with no Python at all.
 - **The trained net is a faithful executor** — if the engine plays badly, suspect the *net/data* (eval
   noise), not the loader. The pilot net loses to HCE because minimax amplifies leaf-eval noise; see the
-  `zenith-nnue-pilot-status` memory. Fix = more/cleaner data + better training, not engine code.
+  `trebuchet-nnue-pilot-status` memory. Fix = more/cleaner data + better training, not engine code.
 - Every net change is still SPRT-gated (`tools/sprt.sh`, fastchess): `CAND_NET`/`BASE_NET` set `EvalFile`
   per side (unset ⇒ that side uses its embedded net). Fixed-depth matches isolate eval quality from NNUE's speed cost.
 

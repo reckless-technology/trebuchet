@@ -13,7 +13,7 @@
 #
 # The organisation's other apps (vst-plugins, ir-capture) and the Pawnstar engines are released the same way, with the
 # same organisation secrets for signing:
-#   - Windows: zenith.exe in each zip is Authenticode-signed through SSL.com's eSigner (CodeSignTool pinned by version
+#   - Windows: trebuchet.exe in each zip is Authenticode-signed through SSL.com's eSigner (CodeSignTool pinned by version
 #     and hash, downloaded by the job; tools/sign-windows.ps1), the account checked before the build, which spends no
 #     signing. Only a publishing run signs, and only the two engines it ships.
 #   - macOS: the engine is signed with the Developer ID Application identity, the hardened runtime and a secure
@@ -23,7 +23,7 @@
 #
 # The files, each archive holding the engine, README.md, LICENSE and THIRD-PARTY-NOTICES.md - the embedded NNUE
 # network is an ODbL 1.0 Produced Work, so the notice naming its training data travels with the binary:
-# zenith-v<version>-linux-x86-64-v2.tar.gz and
+# trebuchet-v<version>-linux-x86-64-v2.tar.gz and
 # -linux-x86-64-v3-pext.tar.gz, -windows-x86-64-v2.zip and -windows-x86-64-v3-pext.zip, -macos-arm64.zip, and
 # -SHA256SUMS.txt over them all. verify opens the release as a draft and each job uploads straight onto it; publish
 # writes the checksums (in a dry run too), checks every archive is on the draft as built, pushes the tag and takes the
@@ -124,18 +124,18 @@ jobs:
             changes=$(gh api -X POST "repos/$GITHUB_REPOSITORY/releases/generate-notes" -f tag_name="$tag" \
               -f target_commitish="$GITHUB_SHA" --jq .body)
             {
-              echo "Zenith $version: a UCI chess engine (C17, king-bucketed NNUE), built and tested at commit \`$GITHUB_SHA\`"
+              echo "Trebuchet $version: a UCI chess engine (C17, king-bucketed NNUE), built and tested at commit \`$GITHUB_SHA\`"
               echo "by run [#$GITHUB_RUN_ID]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)."
               echo
-              echo "- **Windows (x86-64):** \`zenith-$tag-windows-x86-64-v2.zip\` and \`-x86-64-v3-pext.zip\`; \`zenith.exe\` in each"
+              echo "- **Windows (x86-64):** \`trebuchet-$tag-windows-x86-64-v2.zip\` and \`-x86-64-v3-pext.zip\`; \`trebuchet.exe\` in each"
               echo "  is Authenticode-signed (Jonathan Reckless)."
-              echo "- **macOS (Apple silicon):** \`zenith-$tag-macos-arm64.zip\`; the engine is signed with a Developer ID and"
+              echo "- **macOS (Apple silicon):** \`trebuchet-$tag-macos-arm64.zip\`; the engine is signed with a Developer ID and"
               echo "  notarised by Apple."
-              echo "- **Linux (x86-64):** \`zenith-$tag-linux-x86-64-v2.tar.gz\` and \`-x86-64-v3-pext.tar.gz\`."
+              echo "- **Linux (x86-64):** \`trebuchet-$tag-linux-x86-64-v2.tar.gz\` and \`-x86-64-v3-pext.tar.gz\`."
               echo
               echo "\`x86-64-v2\` runs on essentially any modern x86-64 (magic bitboards); \`x86-64-v3-pext\` needs AVX2 and BMI2"
               echo "(Intel Haswell+, AMD Zen 3+) and uses faster PEXT sliding attacks. Each archive holds the engine, README.md,"
-              echo "LICENSE and THIRD-PARTY-NOTICES.md; verify downloads against \`zenith-$tag-SHA256SUMS.txt\`. The search is bit-identical on"
+              echo "LICENSE and THIRD-PARTY-NOTICES.md; verify downloads against \`trebuchet-$tag-SHA256SUMS.txt\`. The search is bit-identical on"
               echo "every platform (the bench node signature, checked on each)."
               echo
               echo "$changes"
@@ -143,7 +143,7 @@ jobs:
             # The REST API's answer carries the draft's numeric id, which the build jobs upload to: a draft has no tag
             # to be found by.
             release_id=$(gh api -X POST "repos/$GITHUB_REPOSITORY/releases" -f tag_name="$tag" \
-              -f target_commitish="$GITHUB_SHA" -f name="Zenith $tag" -F draft=true \
+              -f target_commitish="$GITHUB_SHA" -f name="Trebuchet $tag" -F draft=true \
               -F body=@"$RUNNER_TEMP/notes.md" --jq .id)
             echo "draft release $tag opened: id $release_id"
           fi
@@ -153,7 +153,7 @@ jobs:
             echo "publish=$publish"
             echo "release_id=$release_id"
           } >> "$GITHUB_OUTPUT"
-          echo "Zenith $version (git describe: ${describe:-none}); publish=$publish"
+          echo "Trebuchet $version (git describe: ${describe:-none}); publish=$publish"
 
   # Linux: the two portable x86-64 builds, make check on the baseline and the bench signature on the PEXT build.
   linux:
@@ -175,26 +175,26 @@ jobs:
       - name: Build x86-64-v2 (baseline, magic) + every gate
         run: |
           make clean && make check ARCH=x86-64-v2
-          mkdir -p stage/x86-64-v2 && cp build/zenith stage/x86-64-v2/zenith
+          mkdir -p stage/x86-64-v2 && cp build/trebuchet stage/x86-64-v2/trebuchet
       - name: Build x86-64-v3 (PEXT/BMI2) + bench signature
         run: |
           make clean && make ARCH=x86-64-v3 pext
-          ./build/zenith-pext bench
-          mkdir -p stage/x86-64-v3-pext && cp build/zenith-pext stage/x86-64-v3-pext/zenith
+          ./build/trebuchet-pext bench
+          mkdir -p stage/x86-64-v3-pext && cp build/trebuchet-pext stage/x86-64-v3-pext/trebuchet
       - name: The engines report the version
         run: |
           set -o pipefail
-          for engine in stage/*/zenith; do
+          for engine in stage/*/trebuchet; do
             name=$(printf 'uci\nquit\n' | "$engine" | grep -m1 '^id name' || true)
             echo "$engine: $name"
-            [ "$name" = "id name Zenith $VERSION" ] || { echo "::error::$engine says '$name', not Zenith $VERSION"; exit 1; }
+            [ "$name" = "id name Trebuchet $VERSION" ] || { echo "::error::$engine says '$name', not Trebuchet $VERSION"; exit 1; }
           done
       - name: Package
         run: |
           mkdir -p out
           for variant in x86-64-v2 x86-64-v3-pext; do
             cp README.md LICENSE THIRD-PARTY-NOTICES.md "stage/$variant/"
-            tar -C "stage/$variant" --owner=0 --group=0 --numeric-owner -czf "out/zenith-$TAG-linux-$variant.tar.gz" zenith README.md LICENSE THIRD-PARTY-NOTICES.md
+            tar -C "stage/$variant" --owner=0 --group=0 --numeric-owner -czf "out/trebuchet-$TAG-linux-$variant.tar.gz" trebuchet README.md LICENSE THIRD-PARTY-NOTICES.md
           done
           ls -l out
       - name: Upload to the draft release
@@ -282,18 +282,18 @@ jobs:
         run: |
           make ARCH=x86-64-v2
           make check ARCH=x86-64-v2
-          mkdir -p stage/x86-64-v2 && cp build/zenith.exe stage/x86-64-v2/zenith.exe
+          mkdir -p stage/x86-64-v2 && cp build/trebuchet.exe stage/x86-64-v2/trebuchet.exe
       - name: Build x86-64-v3 (PEXT/BMI2) + bench signature
         run: |
           make clean && make ARCH=x86-64-v3 pext
-          ./build/zenith-pext bench
-          mkdir -p stage/x86-64-v3-pext && cp build/zenith-pext.exe stage/x86-64-v3-pext/zenith.exe
+          ./build/trebuchet-pext bench
+          mkdir -p stage/x86-64-v3-pext && cp build/trebuchet-pext.exe stage/x86-64-v3-pext/trebuchet.exe
       # Both engines import Windows' own DLLs alone (MSYS2's runtime linked statically, RELEASE_LDFLAGS in the
       # Makefile), so they start on a Windows with no MSYS2; a toolchain runtime DLL fails the release before signing.
       - name: Windows DLLs the engines import
         shell: pwsh
         run: |
-          pwsh -NoProfile -File tools/windows-dependents.ps1 stage/x86-64-v2/zenith.exe stage/x86-64-v3-pext/zenith.exe
+          pwsh -NoProfile -File tools/windows-dependents.ps1 stage/x86-64-v2/trebuchet.exe stage/x86-64-v3-pext/trebuchet.exe
           if ($LASTEXITCODE -ne 0) { throw "an engine imports a DLL outside the allowlist" }
       - name: Sign (a publishing run)
         if: env.PUBLISH == 'true'
@@ -304,21 +304,21 @@ jobs:
           ESIGNER_TOTP_SECRET: ${{ secrets.ESIGNER_TOTP_SECRET }}
           ESIGNER_CREDENTIAL_ID: ${{ secrets.ESIGNER_CREDENTIAL_ID }}
         run: |
-          pwsh -NoProfile -File tools/sign-windows.ps1 stage/x86-64-v2/zenith.exe stage/x86-64-v3-pext/zenith.exe
+          pwsh -NoProfile -File tools/sign-windows.ps1 stage/x86-64-v2/trebuchet.exe stage/x86-64-v3-pext/trebuchet.exe
           if ($LASTEXITCODE -ne 0) { throw "the Windows engines were not signed" }
       - name: The engines report the version
         run: |
           set -o pipefail
-          for engine in stage/*/zenith.exe; do
+          for engine in stage/*/trebuchet.exe; do
             name=$(printf 'uci\nquit\n' | "$engine" | grep -m1 '^id name' || true)
             echo "$engine: $name"
-            [ "$name" = "id name Zenith $VERSION" ] || { echo "::error::$engine says '$name', not Zenith $VERSION"; exit 1; }
+            [ "$name" = "id name Trebuchet $VERSION" ] || { echo "::error::$engine says '$name', not Trebuchet $VERSION"; exit 1; }
           done
       - name: Nothing unsigned ships
         if: env.PUBLISH == 'true'
         shell: pwsh
         run: |
-          foreach ($engine in 'stage/x86-64-v2/zenith.exe', 'stage/x86-64-v3-pext/zenith.exe') {
+          foreach ($engine in 'stage/x86-64-v2/trebuchet.exe', 'stage/x86-64-v3-pext/trebuchet.exe') {
             $signature = Get-AuthenticodeSignature -FilePath $engine
             "$engine : $($signature.Status), $($signature.SignerCertificate.Subject)"
             if ($signature.Status -ne 'Valid') { throw "$engine is not validly signed: $($signature.StatusMessage)" }
@@ -328,7 +328,7 @@ jobs:
           mkdir -p out
           for variant in x86-64-v2 x86-64-v3-pext; do
             cp README.md LICENSE THIRD-PARTY-NOTICES.md "stage/$variant/"
-            (cd "stage/$variant" && zip -q "../../out/zenith-$TAG-windows-$variant.zip" zenith.exe README.md LICENSE THIRD-PARTY-NOTICES.md)
+            (cd "stage/$variant" && zip -q "../../out/trebuchet-$TAG-windows-$variant.zip" trebuchet.exe README.md LICENSE THIRD-PARTY-NOTICES.md)
           done
           ls -l out
       - name: Upload to the draft release
@@ -376,7 +376,7 @@ jobs:
         run: |
           make ARCH=
           make check ARCH=
-          mkdir -p stage && cp build/zenith stage/zenith && cp README.md LICENSE THIRD-PARTY-NOTICES.md stage/
+          mkdir -p stage && cp build/trebuchet stage/trebuchet && cp README.md LICENSE THIRD-PARTY-NOTICES.md stage/
       - name: Open the signing keychain
         env:
           MACOS_DEVELOPER_ID_APPLICATION_P12: ${{ secrets.MACOS_DEVELOPER_ID_APPLICATION_P12 }}
@@ -390,23 +390,23 @@ jobs:
           MACOS_NOTARY_KEY_ID: ${{ secrets.MACOS_NOTARY_KEY_ID }}
           MACOS_NOTARY_ISSUER_ID: ${{ secrets.MACOS_NOTARY_ISSUER_ID }}
         run: |
-          tools/sign-macos.sh sign --identifier com.recklesstechnology.zenith stage/zenith
+          tools/sign-macos.sh sign --identifier com.recklesstechnology.trebuchet stage/trebuchet
           mkdir -p out
           # ditto, as Finder makes a zip: the executable bit and the signature come out as they went in.
-          ditto -c -k stage "out/zenith-$TAG-macos-arm64.zip"
-          tools/sign-macos.sh notarize "out/zenith-$TAG-macos-arm64.zip"
-          tools/sign-macos.sh check stage/zenith
+          ditto -c -k stage "out/trebuchet-$TAG-macos-arm64.zip"
+          tools/sign-macos.sh notarize "out/trebuchet-$TAG-macos-arm64.zip"
+          tools/sign-macos.sh check stage/trebuchet
       # What ships is what is checked: the engine as the zip holds it.
       - name: The shipped engine reports the version
         run: |
           set -o pipefail
           mkdir "$RUNNER_TEMP/unzipped"
-          ditto -x -k "out/zenith-$TAG-macos-arm64.zip" "$RUNNER_TEMP/unzipped"
+          ditto -x -k "out/trebuchet-$TAG-macos-arm64.zip" "$RUNNER_TEMP/unzipped"
           ls -l "$RUNNER_TEMP/unzipped"
-          codesign --verify --strict --verbose=2 "$RUNNER_TEMP/unzipped/zenith"
-          name=$(printf 'uci\nquit\n' | "$RUNNER_TEMP/unzipped/zenith" | grep -m1 '^id name' || true)
+          codesign --verify --strict --verbose=2 "$RUNNER_TEMP/unzipped/trebuchet"
+          name=$(printf 'uci\nquit\n' | "$RUNNER_TEMP/unzipped/trebuchet" | grep -m1 '^id name' || true)
           echo "$name"
-          [ "$name" = "id name Zenith $VERSION" ] || { echo "::error::the engine says '$name', not Zenith $VERSION"; exit 1; }
+          [ "$name" = "id name Trebuchet $VERSION" ] || { echo "::error::the engine says '$name', not Trebuchet $VERSION"; exit 1; }
       - name: Upload to the draft release
         if: env.PUBLISH == 'true'
         env:
@@ -460,15 +460,15 @@ jobs:
       - name: The checksums
         run: |
           set -euo pipefail
-          (cd assets && sha256sum zenith-"$TAG"-*.tar.gz zenith-"$TAG"-*.zip > "zenith-$TAG-SHA256SUMS.txt")
-          cat "assets/zenith-$TAG-SHA256SUMS.txt"
-          [ "$(wc -l < "assets/zenith-$TAG-SHA256SUMS.txt")" -eq 5 ] || { echo "::error::expected five archives"; exit 1; }
+          (cd assets && sha256sum trebuchet-"$TAG"-*.tar.gz trebuchet-"$TAG"-*.zip > "trebuchet-$TAG-SHA256SUMS.txt")
+          cat "assets/trebuchet-$TAG-SHA256SUMS.txt"
+          [ "$(wc -l < "assets/trebuchet-$TAG-SHA256SUMS.txt")" -eq 5 ] || { echo "::error::expected five archives"; exit 1; }
       - name: Onto the draft, and published
         if: env.PUBLISH == 'true'
         run: |
           set -euo pipefail
           release="repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID"
-          name="zenith-$TAG-SHA256SUMS.txt"
+          name="trebuchet-$TAG-SHA256SUMS.txt"
           for stale in $(gh api "$release/assets" --jq ".[] | select(.name == \"$name\") | .id"); do
             gh api -X DELETE "repos/$GITHUB_REPOSITORY/releases/assets/$stale"
           done
@@ -494,7 +494,7 @@ jobs:
               { echo "::error::$TAG already names another commit than $GITHUB_SHA"; exit 1; }
           else
             git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
-              tag -a "$TAG" "$GITHUB_SHA" -m "Zenith $VERSION"
+              tag -a "$TAG" "$GITHUB_SHA" -m "Trebuchet $VERSION"
             git push origin "$TAG"
           fi
           gh api -X PATCH "$release" -F draft=false -f make_latest=true --jq .html_url

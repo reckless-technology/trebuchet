@@ -1,6 +1,6 @@
 # What a Windows build of the engine loads from the system: the DLLs its import table and its delay-load table name,
 # held to an allowlist of Windows' own. CI's Windows job and the release's Windows build run it on the engines they
-# built - zenith.exe and zenith-pext.exe - and fail on anything else.
+# built - trebuchet.exe and trebuchet-pext.exe - and fail on anything else.
 #
 # Windows loads every DLL an executable imports before main runs, and an executable whose import the machine cannot
 # satisfy does not start at all (0xC0000135) - a GUI that launches the engine sees it die with no output. The engines

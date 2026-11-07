@@ -15,7 +15,7 @@
  */
 #pragma once
 #include "types.h"
-#ifdef ZENITH_USE_PEXT
+#ifdef TREBUCHET_USE_PEXT
 #include <immintrin.h> // _pext_u64 (BMI2)
 #endif
 
@@ -43,7 +43,7 @@ extern Magic BishopMagics[64];
 /** @brief Dense index of @p occupancy within @p entry's attack-table slice. */
 static inline unsigned magic_index(const Magic *entry, const Bitboard occupancy)
 {
-#ifdef ZENITH_USE_PEXT
+#ifdef TREBUCHET_USE_PEXT
     // BMI2 parallel-bit-extract: pack the masked occupancy bits into a dense index directly, no multiply.
     return (unsigned)_pext_u64(occupancy, entry->mask);
 #else

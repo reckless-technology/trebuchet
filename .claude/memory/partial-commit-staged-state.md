@@ -7,7 +7,7 @@ metadata:
 
 While an experiment lives uncommitted in a file (e.g. search.c during an SPRT), a refactor that touches the
 same file (an include-path move, a rename) can get its fix silently excluded when that file is left out of
-the commit — the working tree builds fine while the committed tree is broken (5 red CI runs in Zenith,
+the commit — the working tree builds fine while the committed tree is broken (5 red CI runs in Trebuchet,
 2026-07-26, ln_tables.inc move).
 
 **Why:** local verification used the working tree; the breakage existed only in the committed state, and no

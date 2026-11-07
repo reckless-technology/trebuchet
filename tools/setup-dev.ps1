@@ -1,11 +1,11 @@
 <#
 .SYNOPSIS
-  Set up a Windows machine to build, test, debug and format Zenith: MSYS2's CLANG64 toolchain, clang-format and the
+  Set up a Windows machine to build, test, debug and format Trebuchet: MSYS2's CLANG64 toolchain, clang-format and the
   editor.
 
 .DESCRIPTION
   Each component is checked first and installed only when it is missing or not the version the repo wants, so the
-  script is safe to run again at any time. Zenith builds on Windows in MSYS2's CLANG64 environment, as CI's Windows job
+  script is safe to run again at any time. Trebuchet builds on Windows in MSYS2's CLANG64 environment, as CI's Windows job
   does (README, "Windows"); MSYS2 goes to C:\msys64, a folder any user may create, and everything else into the user's
   own profile, so nothing needs an administrator. tools/setup-dev.sh is the same for Linux and macOS. VS Code's "setup
   environment" and "check environment" tasks run the one for the platform.
@@ -163,7 +163,7 @@ function Stop-Msys2Processes {
 # The base archive from the newest dated release of msys2/msys2-installer, refused unless its SHA-256 is the digest
 # GitHub records for the asset, unpacked beside the root and moved into place, then initialised and updated.
 function Install-Msys2 {
-  $headers = @{ 'User-Agent' = 'zenith-setup-dev' }
+  $headers = @{ 'User-Agent' = 'trebuchet-setup-dev' }
   if ($env:GITHUB_TOKEN) { $headers['Authorization'] = "Bearer $env:GITHUB_TOKEN" }
   $releases = Invoke-RestMethod -Uri 'https://api.github.com/repos/msys2/msys2-installer/releases?per_page=10' -Headers $headers -ErrorAction Stop
   $asset = $null
@@ -194,7 +194,7 @@ function Install-Msys2 {
   Stop-Msys2Processes
 }
 
-Write-Host "zenith: $(if ($Check) { 'checking' } else { 'setting up' }) the Windows development environment"
+Write-Host "trebuchet: $(if ($Check) { 'checking' } else { 'setting up' }) the Windows development environment"
 
 if (Test-Path $msysBash) { Write-Ok 'MSYS2' $Msys2Root }
 elseif ($Check) { Write-Missing 'MSYS2' "$Msys2Root, and its CLANG64 toolchain" }

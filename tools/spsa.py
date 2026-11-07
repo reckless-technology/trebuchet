@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (C) 2026 Jonny Reckless
-"""SPSA tuner for Zenith's search parameters (fastchess has no built-in SPSA).
+"""SPSA tuner for Trebuchet's search parameters (fastchess has no built-in SPSA).
 
 Each iteration perturbs all parameters simultaneously by +/- c_k*Delta (random signs), plays a small
 self-play match between the theta+ and theta- engines (same binary, different UCI option values), and nudges
 theta toward whichever side scored better (Simultaneous Perturbation Stochastic Approximation, Spall).
 Standard gain schedule: c_k = c0/k^0.101, a_k = a0/(k+A)^0.602. Checkpoints theta to a file each iteration.
 
-    python tools/spsa.py --engine ./build/zenith-spsa \
+    python tools/spsa.py --engine ./build/trebuchet-spsa \
         --openings ~/pawnstar_nnue/openings.epd --fastchess ~/pawnstar_nnue/fastchess/fastchess \
         --iters 800 --games 8 --concurrency 8 --tc 8+0.08 --out tools/spsa_state.json
 """

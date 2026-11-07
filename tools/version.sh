@@ -5,7 +5,7 @@
 # (vMAJOR.MINOR.BUILD) are not version marks and are excluded. A tree with no mark reachable - a source tarball, a
 # shallow clone, a fork without the tags - prints 0.0.0, with a warning on stderr, which the release workflow refuses.
 #
-# The Makefile compiles it into the binary (-DZENITH_VERSION_STRING; src/version.h).
+# The Makefile compiles it into the binary (-DTREBUCHET_VERSION_STRING; src/version.h).
 set -euo pipefail
 describe=$(git -C "$(dirname "$0")/.." describe --tags --long --match 'v[0-9]*.[0-9]*' --exclude 'v*.*.*' 2> /dev/null || true)
 if [[ "$describe" =~ ^v([0-9]+)\.([0-9]+)-([0-9]+)-g[0-9a-f]+$ ]]; then
