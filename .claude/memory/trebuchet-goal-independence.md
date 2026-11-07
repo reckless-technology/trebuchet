@@ -7,8 +7,9 @@ metadata:
 
 Primary goal: make Trebuchet stronger than pawnstar C++ (the reference opponent). Pawnstar is a mature NNUE
 engine (Lazy SMP, lockless TT, perspective net), so Trebuchet needs its own NNUE to compete — classical HCE
-alone will not close the gap. **That goal was met:** Trebuchet beats pawnstar at every tested configuration
-(~+135 Elo single-thread at 8+0.08, bookless both sides — see [[pawnstar-gap-benchmarks]]).
+alone will not close the gap. **That goal was met:** Trebuchet led pawnstar at every configuration tested in
+July 2026, and Trebuchet 1.0.0 is +144.30 Elo over Pawnstar 2.2.0 single-thread at 8+0.08 (lin-0, 2026-11-07 UTC;
+multi-thread not re-measured — see [[pawnstar-gap-benchmarks]]).
 
 ## The original constraint (2026-07-18)
 
@@ -62,8 +63,9 @@ wrong net apart only by its file size, which is the exact failure the shared con
   replaces the PlentyChess lineage, and the swap did **not** wait on an A/B result — removing the data
   dependency is the point. It loads unchanged — identical architecture and `RNNUE1`
   header, `nnuecheck` 3/3 at `max|diff| 0` and the shared `pytorch/verify.py` 0 cp over 4,000 positions — and moves
-  the bench signature 1,390,606 -> 1,653,778. **Its strength in Trebuchet is NOT YET MEASURED** (Jonny is
-  running `reckless-lc0-runf-sb870` against `cap2` himself); the +9.99 Elo at 8+0.08 and +1.13 at
+  the bench signature 1,390,606 -> 1,653,778. **Measured in Trebuchet afterwards, against `cap2`: +9.82 Elo**,
+  95% +1.27 to +18.36 (4,000 games, 8+0.08, lin-0, 2026-10-30; NNUE_TRAINING.md has the rest), which clears a
+  non-inferiority bar and does not say the new data made the engine stronger. The +9.99 Elo at 8+0.08 and +1.13 at
   12+0.12 measured for this net are **pawnstar's numbers against pawnstar's old net** and do not transfer.
 - Trebuchet's `datagen` self-play generator trained only the `v1`-`v5` pilots and the opening book. **No net
   Trebuchet ever released was trained on it** — the **PlentyChess** dataset was adopted at `pc1` because it
