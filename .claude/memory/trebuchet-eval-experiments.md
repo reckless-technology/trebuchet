@@ -163,5 +163,5 @@ first attempt at epoch 6 -> train.py now checkpoints per epoch with --resume (PR
 shards are added — nearly corrupted comparability). Rerun reproduced the lost curve exactly (epoch-seeded
 shuffle). Shipped as embedded default in the releases up to the one then numbered 2.1.x; bench 1,390,606. **Superseded at the release then numbered 3.0.0** by
 `reckless-lc0-runf-sb870` (Leela Chess Zero data, shared pipeline, bench 1,653,778) — measured against
-cap2 afterwards at +9.82 Elo, 95% +1.27 to +18.36 (4,000 games, 8+0.08, lin-0, 2026-10-30; NNUE_TRAINING.md has the
+cap2 afterwards at +9.82 Elo, 95% +1.18 to +18.47 (4,000 games, 8+0.08, lin-0, 2026-10-30; NNUE_TRAINING.md has the
 rest): non-inferior, which was the bar. cap2 is no longer in the tree (git history has it).

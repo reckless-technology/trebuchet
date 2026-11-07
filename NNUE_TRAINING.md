@@ -426,7 +426,7 @@ volume within that lineage, not against the current net:
 | km1 | + horizontal king mirroring | +14.3 over ob2 (fixed depth) |
 | cap1 | hidden 512 → **1024** | +52 fixed depth, **+14.7 timed** over km1 |
 | cap2 | + 2.15B positions | **+10** over cap1 (fixed depth); val loss 0.013746 |
-| `reckless-lc0-runf-sb870` | same shape, **Leela Chess Zero** data | **+9.82** over cap2 (timed, a fixed 4,000 games, not an SPRT gate), 95% +1.27 to +18.36 — see below |
+| `reckless-lc0-runf-sb870` | same shape, **Leela Chess Zero** data | **+9.82** over cap2 (timed, a fixed 4,000 games, not an SPRT gate), 95% +1.18 to +18.47 — see below |
 
 Superseded nets are deleted from the tree once the shipped engine can no longer load them (git history
 preserves them; the `RNNUE1` header names every architecture field, so a mismatch is refused by name
@@ -440,8 +440,8 @@ measurement tells us what the change cost or gained, not whether to make it. The
 says nothing about strength. Figures measured for this net in **pawnstar**, against *pawnstar's* old net,
 are not Trebuchet results and do not transfer.
 
-**Measured afterwards against `cap2`: +9.82 Elo**, 95% +1.27 to +18.36 allowing for opening correlation
-(ICC 0.133, design effect 1.758): 4,000 games, +809 =2495 -696, 51.41%, a fixed count, single-threaded
+**Measured afterwards against `cap2`: +9.82 Elo**, 95% +1.18 to +18.47 allowing for opening correlation
+(ICC 0.133, design effect 1.798): 4,000 games, +809 =2495 -696, 51.41%, a fixed count, single-threaded
 self-play at 8+0.08, concurrency 7, on lin-0, 2026-10-30 (-0700). The bar is non-inferiority, not
 superiority: the interval only just excludes zero, so this says the data dependency could go at no
 measured cost, not that the new data made the engine stronger. The games were played by a
@@ -449,8 +449,8 @@ measured cost, not that the new data made the engine stronger. The games were pl
 release asset; the only `src/` difference from the release commit `5de886b` is `uci.c` adding a
 print-only `license` command.
 
-**Against the reference opponent: Trebuchet 1.0.0 is +144.30 Elo over Pawnstar 2.2.0**, 95% +134.37 to
-+154.24 allowing for opening correlation (ICC 0.157, design effect 1.895; nominal +137.09 to +151.52):
+**Against the reference opponent: Trebuchet 1.0.0 is +144.30 Elo over Pawnstar 2.2.0**, 95% +134.35 to
++154.49 allowing for opening correlation (ICC 0.157, design effect 1.947; nominal +137.15 to +151.58):
 4,000 games, +1787 =1998 -215, 69.65%. Both sides played the same net, not merely the same shape:
 Trebuchet's `nets/reckless-lc0-runf-sb870.nnue` and Pawnstar's `nnue/pawnstar-v20.bin` (the training
 run's `runF-pawnstar-sb870`) are one file, SHA-256 `c8a29b328849cd1ea60c65f5d3dea84f585f404037ec026c44a94e1174b1cc34`,
@@ -462,6 +462,9 @@ resign movecount=3 score=600, `Threads=1`, `Hash=64`, own book off, the game cou
 Pawnstar's defaults (`OwnBook=true`, and in 2.2.0 16 threads on that machine) must be overridden or the
 measurement is meaningless. This is single-thread, on that machine, at that time control; it does not
 generalise beyond them, and multi-thread was not re-measured.
+
+Both corrected intervals, and that nominal one, are the primary lines of `tools/opening_icc.py` in
+`pawnstar`, at `089e19a` or later, so a rerun over those matches' PGNs gives these figures.
 
 **Against Stoopid Chess 4.1.0: 300 games, +292 =4 -4, 98.00%**, same machine, date and conditions, except
 that Stoopid Chess has no `Threads` or book option and was given `Hash=64` alone. No Elo is quoted at that
