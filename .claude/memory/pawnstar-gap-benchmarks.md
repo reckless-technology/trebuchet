@@ -8,6 +8,27 @@ metadata:
   modified: 2026-07-25T11:08:31.366Z
 ---
 
+**2026-11-07 (UTC), the current releases: Trebuchet 1.0.0 is +144.30 Elo over Pawnstar 2.2.0, single-thread.**
+4,000 games, +1787 =1998 -215, 69.65%, 95% +134.37 to +154.24 allowing for opening correlation (ICC 0.157,
+design effect 1.895; nominal +137.09 to +151.52). lin-0 (Ryzen 7 6800H, 8 physical cores), fastchess 1.8.2
+alpha, published release binaries frozen and re-hashed, no CI job alongside, 8+0.08, concurrency 7, paired
+colours, 306 lines (298 distinct positions) from the TSCP-derived set, draw movenumber=40 movecount=8 score=20,
+resign movecount=3 score=600, Threads=1, Hash=64, own book off, game count fixed in advance. Evidence:
+`~/sprt/trebuchet-1.0-strength/` on lin-0; its STATUS.md leaves one thing open, 67 unforced Pawnstar moves with
+no info line, cause not established. Both sides played one net, SHA-256 `c8a29b328849cd1e...`: `pawnstar-v20.bin`
+(run name `runF-pawnstar-sb870`) and `reckless-lc0-runf-sb870.nnue` are the same file, and both binaries embed it.
+- **Stoopid Chess 4.1.0, same conditions (Hash=64 only; it has no Threads or book option): 300 games, +292 =4 -4,
+  98.00%.** No Elo quoted at that score; win rate at least 0.948 (two-sided 95% Clopper-Pearson, draws as
+  non-wins). Cut from 1,000 before any counted game, on a 14-0 pilot, because a one-sided check needs no more.
+- **Pawnstar-Go and Pawnstar-RS were not played.** Speed at 7-way occupancy, mean nps: Pawnstar 1,310,183,
+  Pawnstar-Go 1,028,355, Pawnstar-RS 720,836. Any claim about those two is inference from bit-exact search and
+  lower speed, not games.
+- **Comparisons with the July figures below do not attribute to any one cause:** machine, concurrency, both sides'
+  nets, both engines' code and the openings all differ. Multi-thread was not re-measured, so +107.5 at 8 threads is
+  still July's figure on July's binaries, and nothing here generalises beyond this machine and time control.
+- **The "~+135" in older notes was `cap1`, not `cap2`:** it first appears on 2026-07-30 (`65c7e9f`, 800 games per
+  book setup, +/-17) with the Makefile's `NET` at `cap1`, and `cap2` shipped on 2026-08-01. No game logs found.
+
 Trebuchet's strength is benchmarked against pawnstar C++ (the reference opponent; user wants Trebuchet stronger). Gaps measured with fastchess, tc=8+0.08, PlentyChess openings.
 
 **GOAL FULLY ACHIEVED (2026-07-23): Trebuchet beats pawnstar at BOTH single thread (+77.7 ± 25.2) and 8 threads

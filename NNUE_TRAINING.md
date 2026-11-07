@@ -425,7 +425,7 @@ volume within that lineage, not against the current net:
 | km1 | + horizontal king mirroring | +14.3 over ob2 (fixed depth) |
 | cap1 | hidden 512 → **1024** | +52 fixed depth, **+14.7 timed** over km1 |
 | cap2 | + 2.15B positions | **+10** over cap1 (fixed depth); val loss 0.013746 |
-| `reckless-lc0-runf-sb870` | same shape, **Leela Chess Zero** data | strength in Trebuchet **not yet measured** — see below |
+| `reckless-lc0-runf-sb870` | same shape, **Leela Chess Zero** data | **+9.82** over cap2 (timed, a fixed 4,000 games, not an SPRT gate), 95% +1.27 to +18.36 — see below |
 
 Superseded nets are deleted from the tree once the shipped engine can no longer load them (git history
 preserves them; the `RNNUE1` header names every architecture field, so a mismatch is refused by name
@@ -433,13 +433,48 @@ rather than inferred from a file's length). `cap1` and `cap2` were removed for a
 different reason — the engine of the release then numbered 3.0.0 loads both perfectly well, they being the same
 shape: they are PlentyChess-derived, and no release ships such a net.
 
-**The new net's strength in Trebuchet is unmeasured, and the swap did not wait on it** — removing the data
-dependency is the point, so the measurement tells us what the change cost or gained, not whether to make
-it. The net loads unchanged (same architecture, same container, `nnuecheck` and the shared
+**The swap did not wait on a measurement** — removing the data dependency is the point, so the
+measurement tells us what the change cost or gained, not whether to make it. The net loads unchanged (same architecture, same container, `nnuecheck` and the shared
 `pytorch/verify.py` both clean) and it moves the bench node signature from 1,390,606 to **1,653,778**, which is an eval change and
 says nothing about strength. Figures measured for this net in **pawnstar**, against *pawnstar's* old net,
 are not Trebuchet results and do not transfer.
 
-The ~**+135 Elo** single-thread at 8+0.08 over the reference opponent (pawnstar), bookless on both sides,
-was measured with `cap2` and stands as made (pawnstar's defaults `Threads=32`/`OwnBook=true` must
-be overridden or the measurement is meaningless); it has not been re-measured with the current net.
+**Measured afterwards against `cap2`: +9.82 Elo**, 95% +1.27 to +18.36 allowing for opening correlation
+(ICC 0.133, design effect 1.758): 4,000 games, +809 =2495 -696, 51.41%, a fixed count, single-threaded
+self-play at 8+0.08, concurrency 7, on lin-0, 2026-10-30 (-0700). The bar is non-inferiority, not
+superiority: the interval only just excludes zero, so this says the data dependency could go at no
+measured cost, not that the new data made the engine stronger. The games were played by a
+`-march=native` build of `1c747c5`, which reports "Zenith 2.1.12" (the engine's name then), not by the
+release asset; the only `src/` difference from the release commit `5de886b` is `uci.c` adding a
+print-only `license` command.
+
+**Against the reference opponent: Trebuchet 1.0.0 is +144.30 Elo over Pawnstar 2.2.0**, 95% +134.37 to
++154.24 allowing for opening correlation (ICC 0.157, design effect 1.895; nominal +137.09 to +151.52):
+4,000 games, +1787 =1998 -215, 69.65%. Both sides played the same net, not merely the same shape:
+Trebuchet's `nets/reckless-lc0-runf-sb870.nnue` and Pawnstar's `nnue/pawnstar-v20.bin` (the training
+run's `runF-pawnstar-sb870`) are one file, SHA-256 `c8a29b328849cd1ea60c65f5d3dea84f585f404037ec026c44a94e1174b1cc34`,
+and both release binaries embed it. Measured on lin-0 (Ryzen 7 6800H, 8 physical cores), 2026-11-07 UTC,
+with fastchess 1.8.2 alpha and the published release binaries (Trebuchet's `linux-x86-64-v3-pext`),
+frozen and re-hashed, no CI job alongside: 8+0.08, concurrency 7, paired colours, 306 lines (298 distinct
+positions) from the TSCP-derived opening set, draw adjudication movenumber=40 movecount=8 score=20,
+resign movecount=3 score=600, `Threads=1`, `Hash=64`, own book off, the game count fixed in advance.
+Pawnstar's defaults (`OwnBook=true`, and in 2.2.0 16 threads on that machine) must be overridden or the
+measurement is meaningless. This is single-thread, on that machine, at that time control; it does not
+generalise beyond them, and multi-thread was not re-measured.
+
+**Against Stoopid Chess 4.1.0: 300 games, +292 =4 -4, 98.00%**, same machine, date and conditions, except
+that Stoopid Chess has no `Threads` or book option and was given `Hash=64` alone. No Elo is quoted at that
+score; the win rate is at least 0.948 (two-sided 95% Clopper-Pearson, draws counted as non-wins). The
+count was cut from 1,000 before any counted game, on a 14-0 pilot, because a one-sided check needs no more.
+
+**Pawnstar-Go and Pawnstar-RS were not played.** Speed at 7-way occupancy (mean nps, 2.2.0 release
+binaries, lin-0, 2026-11-07 UTC): Pawnstar 1,310,183, Pawnstar-Go 1,028,355, Pawnstar-RS 720,836. So
+Pawnstar is the fastest port, and any claim about the other two rests on inference from their bit-exact
+search and lower speed, not on games.
+
+**History, not the current figure:** ~+135 Elo single-thread at 8+0.08, recorded as bookless on both sides.
+It first appears on 2026-07-30 (`65c7e9f`, reporting a book gate of 800 games per book setup, ±17), when
+the Makefile's `NET` was `cap1`; `11ac6ea` the same day says "with the current net". `cap2` shipped on
+2026-08-01 (`fc7747b`), so the words "measured with `cap2`", which this document carried from 2026-10-30
+(`33b544d`), were wrong. No game logs for it have been found. A difference from +144.30 attributes to no one
+cause: machine, concurrency, both sides' nets, both engines' code and the openings all differ.
