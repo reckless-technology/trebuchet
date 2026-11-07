@@ -328,11 +328,12 @@ The script pins `Threads=1`, `Hash` (16 MB, `$HASH`) and `OwnBook=false` on both
 beside the result, so a measurement does not depend on a UCI default or on the machine's core count. It
 defaults `CONCURRENCY` to one game per physical core less one.
 
-Fixed-depth matches isolate eval quality from NNUE's speed cost. **Self-play gains only partially transfer
-to a much stronger reference** (an eval win of +60 in self-play was ~+20 vs the pawnstar reference), so SPRT
-self-play deltas overstate the gain against a stronger opponent, and speed wins transfer far better than
-eval wins. The full experiment log with every result and lesson is in
-`.claude/memory/trebuchet-eval-experiments.md`.
+Fixed-depth matches isolate eval quality from NNUE's speed cost. **How far a self-play gain transfers to
+another opponent is not established.** The "+60 in self-play was ~+20 vs pawnstar" once quoted here was the -278
+to -258 movement, from July 2026 matches that left Pawnstar on its default 32 threads and own book against a
+one-thread Trebuchet, so it says nothing about transfer; the claim that speed wins transfer better than eval
+wins rested on the same series (`.claude/memory/pawnstar-gap-benchmarks.md`). The full experiment log with
+every result and lesson is in `.claude/memory/trebuchet-eval-experiments.md`.
 
 ---
 
