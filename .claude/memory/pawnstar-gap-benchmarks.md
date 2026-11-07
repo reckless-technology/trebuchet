@@ -52,6 +52,8 @@ kb3 loaded) and trebuchet reaches depth 20 in 2.7s where pawnstar reaches 17 in 
 
 **IMPORTANT — always match `-concurrency` when comparing gap numbers.** Concurrency changes the timed result a lot: pc2 vs pawnstar was −238±52 at conc 30 but −277±44 at conc 8 (same net, same TC). Cross-run comparisons at different concurrency are meaningless.
 
+**Caution (2026-11-07): the gaps to pawnstar in this list are the Threads=32-plus-book artifact above, so they and every "partial transfer", "~1/3" and "~1:1" read from them in this note establish no transfer rate, for eval or speed; the fair +78 to +111.75 below mixes eval, search and speed and does not establish one either.**
+
 Single-thread, matched conditions (conc 8):
 - **pc2 (512, 190M PlentyChess positions):** −277.5 ± 43.6 vs pawnstar (2026-07-21).
 - **kb2 (king buckets, 650M PlentyChess positions):** −257.6 ± 40.7 → kb2 closes ~+20 Elo (eval gain, partial transfer).
@@ -72,6 +74,8 @@ legality-oracle speed win transferred to pawnstar near 1:1 (speed helps vs any o
   PAWNSTAR AT 8 THREADS.** GOAL ACHIEVED at multi-thread. A +149 Elo swing from the session's work. Trebuchet's
   Lazy SMP scales much better than pawnstar's, so at equal threads the eval+search gains compound into a
   commanding lead — even though single-thread is still −134 (partial transfer of eval gains). See [[trebuchet-goal-independence]].
+
+**Caution (2026-11-07): do not rely on the next paragraph; its ~+20 and ~−258 are the same artifact, and no pinned match of the kb2-era binary exists to replace them.**
 
 **Key lesson — self-play gains only partially transfer to a much stronger opponent.** kb2 is +63 vs pc2 in
 self-play but only ~+20 better against pawnstar (~1/3 transfer). SPRT self-play deltas OVERSTATE the gain

@@ -56,6 +56,7 @@ Running log of Trebuchet NNUE eval experiments (all SPRT-gated vs the current be
 - **Data returns are diminishing:** 190M→650M gave +57 (kb2), 650M→1.4B gave only +8 (kb3). The PlentyChess
   data lever is largely tapped out. Shipped kb3 anyway (strictly-better net, same size/speed = free upgrade),
   but further gains need a DIFFERENT lever: speed (make/unmake, transfers ~1:1 to pawnstar) or better/own data.
+  (Caution, 2026-11-07: that ~1:1 came from matches with pawnstar on Threads=32 and its book, so it is not established; see [[pawnstar-gap-benchmarks]].)
 - The streaming trainer (`--shard-dir`) + parallel `--featurise-shard` handled 1.4B on a 62GB box fine.
 
 ## Pawnstar-idea adoption experiments (2026-07-23/24) — 1 shipped, 2 neutral
