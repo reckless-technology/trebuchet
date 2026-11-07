@@ -2,8 +2,7 @@
 
 > Trebuchet was briefly called Zenith until 2026-11-06, and was renamed because another chess program already
 > uses that name. Releases up to 3.0.0 and tags up to v3.0 were made under the old name, and version numbering
-> restarted at 1.0 with the new one. The nets `cap1` and `cap2` that these documents mention lived at
-> `nets/zenith-cap1.nnue` and `nets/zenith-cap2.nnue`, and are only in git history now.
+> restarted at 1.0 with the new one.
 
 An independent UCI chess engine in **C17** — its own search, move generation and data generation,
 written from scratch rather than ported — evaluating with the shared Reckless NNUE network.
