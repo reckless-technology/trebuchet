@@ -12,7 +12,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
-typedef int (*zen_thread_fn)(void *); ///< thread entry point (return value ignored)
+typedef int (*platform_thread_fn)(void *); ///< thread entry point (return value ignored)
 
 #if defined(__APPLE__) || defined(__STDC_NO_THREADS__) || !__has_include(<threads.h>)
 
@@ -21,26 +21,26 @@ typedef int (*zen_thread_fn)(void *); ///< thread entry point (return value igno
 
 typedef struct
 {
-    pthread_t     handle;
-    zen_thread_fn fn;
-    void         *arg;
-} zen_thread_t;
+    pthread_t          handle;
+    platform_thread_fn fn;
+    void              *arg;
+} platform_thread_t;
 
-static inline void *zen_thread_trampoline(void *raw)
+static inline void *platform_thread_trampoline(void *raw)
 {
-    zen_thread_t *thread = (zen_thread_t *)raw;
+    platform_thread_t *thread = (platform_thread_t *)raw;
     thread->fn(thread->arg);
     return NULL;
 }
 
-static inline int zen_thread_create(zen_thread_t *thread, zen_thread_fn fn, void *arg)
+static inline int platform_thread_create(platform_thread_t *thread, platform_thread_fn fn, void *arg)
 {
     thread->fn  = fn;
     thread->arg = arg;
-    return pthread_create(&thread->handle, NULL, zen_thread_trampoline, thread) == 0 ? 0 : -1;
+    return pthread_create(&thread->handle, NULL, platform_thread_trampoline, thread) == 0 ? 0 : -1;
 }
 
-static inline void zen_thread_join(zen_thread_t *thread)
+static inline void platform_thread_join(platform_thread_t *thread)
 {
     pthread_join(thread->handle, NULL);
 }
@@ -52,14 +52,14 @@ static inline void zen_thread_join(zen_thread_t *thread)
 typedef struct
 {
     thrd_t handle;
-} zen_thread_t;
+} platform_thread_t;
 
-static inline int zen_thread_create(zen_thread_t *thread, zen_thread_fn fn, void *arg)
+static inline int platform_thread_create(platform_thread_t *thread, platform_thread_fn fn, void *arg)
 {
     return thrd_create(&thread->handle, fn, arg) == thrd_success ? 0 : -1;
 }
 
-static inline void zen_thread_join(zen_thread_t *thread)
+static inline void platform_thread_join(platform_thread_t *thread)
 {
     thrd_join(thread->handle, NULL);
 }

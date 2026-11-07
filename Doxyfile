@@ -1,7 +1,7 @@
-# Doxygen configuration for Zenith. Generate the docs with `make doc` (output: doc/html/index.html).
+# Doxygen configuration for Trebuchet. Generate the docs with `make doc` (output: doc/html/index.html).
 # Only non-default options are set; everything else uses Doxygen's defaults.
 
-PROJECT_NAME           = "Zenith"
+PROJECT_NAME           = "Trebuchet"
 PROJECT_BRIEF          = "A from-scratch UCI chess engine in C17 with its own NNUE"
 OUTPUT_DIRECTORY       = doc
 INPUT                  = README.md NNUE_TRAINING.md src datagen

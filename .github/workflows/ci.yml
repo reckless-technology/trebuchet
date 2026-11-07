@@ -27,8 +27,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { label: linux,   os: ubuntu-24.04, shell: bash,        arch: x86-64-v2, bin: build/zenith,     binext: "",     platform: linux-x86-64 }
-          - { label: windows, os: windows-2025, shell: "msys2 {0}", arch: x86-64-v2, bin: build/zenith.exe, binext: ".exe", platform: windows-x86-64 }
+          - { label: linux,   os: ubuntu-24.04, shell: bash,        arch: x86-64-v2, bin: build/trebuchet,     binext: "",     platform: linux-x86-64 }
+          - { label: windows, os: windows-2025, shell: "msys2 {0}", arch: x86-64-v2, bin: build/trebuchet.exe, binext: ".exe", platform: windows-x86-64 }
     defaults:
       run:
         shell: ${{ matrix.shell }}
@@ -70,7 +70,7 @@ jobs:
           pwsh -NoProfile -File tools/windows-dependents.ps1 ${{ matrix.bin }}
           if ($LASTEXITCODE -ne 0) { throw "the engine imports a DLL outside the allowlist" }
 
-      - name: Build the datagen tools (Linux only; build-only bitrot guard for build/zenith-datagen + build/zenith-bullet2text)
+      - name: Build the datagen tools (Linux only; build-only bitrot guard for build/trebuchet-datagen + build/trebuchet-bullet2text)
         if: matrix.label == 'linux'
         run: make datagen ARCH=${{ matrix.arch }}
 
@@ -96,7 +96,7 @@ jobs:
         # bench self-checks each position's node count against the values pinned in src/uci.c (BenchCases) and
         # exits non-zero on any mismatch — no external signature to keep in sync. A divergence here would mean a
         # non-portable computation crept into the search; if a change moves the signature intentionally, re-run
-        # `./build/zenith bench` and update BenchCases in src/uci.c.
+        # `./build/trebuchet bench` and update BenchCases in src/uci.c.
         run: ./${{ matrix.bin }} bench
 
       - name: UCI smoke (coordinator thread + Lazy SMP helpers + time management)
@@ -121,13 +121,13 @@ jobs:
           printf 'setoption name EvalFile value test_net.nnue\nsetoption name Threads value 2\nposition startpos\ngo depth 8\nquit\n' | ./${{ matrix.bin }} | grep -q '^bestmove ' || { echo '::error::EvalFile search produced no bestmove'; exit 1; }
 
       - name: Name the binary with the build version
-        run: cp "${{ matrix.bin }}" "zenith-${{ steps.ver.outputs.version }}-${{ matrix.platform }}${{ matrix.binext }}"
+        run: cp "${{ matrix.bin }}" "trebuchet-${{ steps.ver.outputs.version }}-${{ matrix.platform }}${{ matrix.binext }}"
 
       - name: Upload binary artifact
         uses: actions/upload-artifact@v4
         with:
-          name: zenith-${{ steps.ver.outputs.version }}-${{ matrix.platform }}
-          path: zenith-${{ steps.ver.outputs.version }}-${{ matrix.platform }}${{ matrix.binext }}
+          name: trebuchet-${{ steps.ver.outputs.version }}-${{ matrix.platform }}
+          path: trebuchet-${{ steps.ver.outputs.version }}-${{ matrix.platform }}${{ matrix.binext }}
           if-no-files-found: error
 
   # AddressSanitizer + UBSan build and memory-safety gates (Linux only — the sanitizer build is where OOB /
@@ -141,29 +141,29 @@ jobs:
       - name: Build with AddressSanitizer + UndefinedBehaviorSanitizer
         run: make debug
       - name: Perft under ASan/UBSan
-        run: ./build/zenith-debug perft
+        run: ./build/trebuchet-debug perft
       - name: Legality oracle under ASan/UBSan
-        run: ./build/zenith-debug legalcheck
+        run: ./build/trebuchet-debug legalcheck
       - name: Adversarial-input fuzz under ASan/UBSan (memory-safety gate)
-        run: ./build/zenith-debug fuzzcheck
+        run: ./build/trebuchet-debug fuzzcheck
 
       - name: Embedded opening book under ASan/UBSan (the blob is parsed into heap entries)
-        run: ./build/zenith-debug embookcheck
+        run: ./build/trebuchet-debug embookcheck
       - name: UCI smoke under ASan/UBSan (threaded search — coordinator + Lazy SMP helper)
         run: |
-          printf 'setoption name Threads value 2\nposition startpos\ngo depth 9\nquit\n' | ./build/zenith-debug > uci_smoke.out
+          printf 'setoption name Threads value 2\nposition startpos\ngo depth 9\nquit\n' | ./build/trebuchet-debug > uci_smoke.out
           grep -q '^bestmove ' uci_smoke.out || { echo '::error::no bestmove under ASan'; cat uci_smoke.out; exit 1; }
       - name: NNUE gate on a synthetic net under ASan/UBSan
         run: |
           python3 tools/make_test_net.py test_net.nnue
-          ./build/zenith-debug nnuecheck test_net.nnue
+          ./build/trebuchet-debug nnuecheck test_net.nnue
 
       - name: Build the datagen tools with ASan/UBSan (they live outside src/, so `make debug` skips them)
         run: make datagen-debug
 
       - name: Datagen smoke under ASan/UBSan (2 self-play games at a tiny node budget)
         run: |
-          ./build/zenith-datagen-debug 2 datagen_smoke.txt 1 200 4
+          ./build/trebuchet-datagen-debug 2 datagen_smoke.txt 1 200 4
           [ -s datagen_smoke.txt ] || { echo '::error::datagen produced no records'; exit 1; }
 
   # Line coverage of src/ by every gate (`make coverage`: LLVM source-based, nnuecheck and the front-end gate included,

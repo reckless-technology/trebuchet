@@ -7,11 +7,11 @@ Walks the book from the start position, following every stored move depth-first 
 first), and prints each complete book line as numbered SAN. A position reached again through a
 different move order is printed once in full; later arrivals end their line with "(transposes)".
 
-All chess knowledge comes from the zenith binary: `polykey` locates positions in the book,
+All chess knowledge comes from the trebuchet binary: `polykey` locates positions in the book,
 `moves`/`applymoves` validate and apply them, and `san` renders each finished line — the displayer
 itself never interprets a position. Works on any Polyglot .bin (including `make get-book`'s).
 
-Usage: python3 tools/show_book.py books/zenith-book-r1.bin [--weights] [--max-lines N]
+Usage: python3 tools/show_book.py books/trebuchet-book-r1.bin [--weights] [--max-lines N]
 """
 import argparse
 import struct
@@ -25,7 +25,7 @@ CASTLE_FROM_POLYGLOT = {"e1h1": "e1g1", "e1a1": "e1c1", "e8h8": "e8g8", "e8a8": 
 def run_cli(binary, *args):
     result = subprocess.run([binary, *args], capture_output=True, text=True)
     if result.returncode != 0:
-        raise SystemExit(f"zenith {args[0]} failed: {result.stderr.strip()}")
+        raise SystemExit(f"trebuchet {args[0]} failed: {result.stderr.strip()}")
     return result.stdout.strip()
 
 
@@ -71,7 +71,7 @@ def format_line(binary, uci_moves, weights, show_weights):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("book", help="Polyglot .bin file")
-    parser.add_argument("--engine", default="./build/zenith")
+    parser.add_argument("--engine", default="./build/trebuchet")
     parser.add_argument("--weights", action="store_true", help="annotate each move with its book weight")
     parser.add_argument("--max-lines", type=int, default=5000)
     args = parser.parse_args()

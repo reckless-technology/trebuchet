@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Set up a Linux or macOS machine to build, test, debug and format Zenith: the toolchain, clang-format and the
+# Set up a Linux or macOS machine to build, test, debug and format Trebuchet: the toolchain, clang-format and the
 # editor. Each component is checked first and installed only when it
 # is missing, so the script is safe to run again at any time. uv and clang-format go into the user's own profile
 # (~/.local/bin); the system packages come from apt (Debian, Ubuntu, Mint: sudo asks for a password), and on macOS from
@@ -129,7 +129,7 @@ install_vscode_extensions() {
 clang_format_version_of() { "$1" --version 2>/dev/null | sed -n 's/.*version \([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\).*/\1/p' | head -1; }
 
 # ---------------------------------------------------------------------------------------------------------------------
-echo "zenith: $([ "$check" = 1 ] && echo checking || echo 'setting up') the $os development environment"
+echo "trebuchet: $([ "$check" = 1 ] && echo checking || echo 'setting up') the $os development environment"
 
 case "$os" in
     Linux) linux_base clang make python3 git zip gdb curl ;;

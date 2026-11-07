@@ -19,5 +19,5 @@ gain-test was mid-run, so the correct hypothesis is non-regression.
 
 **How to apply:** for elegance/simplification refactors that perturb the bench signature only via move
 order or tie-breaking (no intended strength change), run `ELO0=-5 ELO1=0 tools/sprt.sh`; reserve the
-default `[0, 5]` bounds for changes meant to gain Elo. See [[spsa-tuning]] and [[zenith-eval-experiments]]
+default `[0, 5]` bounds for changes meant to gain Elo. See [[spsa-tuning]] and [[trebuchet-eval-experiments]]
 for the gain-test side of the discipline.

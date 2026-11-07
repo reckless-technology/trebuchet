@@ -1,9 +1,9 @@
 # Third-party notices
 
-Zenith itself is free software under the **GNU General Public License v3.0 or later** — see
-[LICENSE](LICENSE). This file is the single home for the notices Zenith owes for third-party material it
+Trebuchet itself is free software under the **GNU General Public License v3.0 or later** — see
+[LICENSE](LICENSE). This file is the single home for the notices Trebuchet owes for third-party material it
 ships or embeds, and for the attributions it keeps on the record. It is shipped in every release archive
-beside the engine, and `zenith license` prints the training-data notice from the binary itself - as a CLI
+beside the engine, and `trebuchet license` prints the training-data notice from the binary itself - as a CLI
 subcommand and as a command of the UCI loop, `licence` accepted for either, as it is in every Reckless
 engine. A release binary embeds the network, so it has to embed the notice with it.
 
@@ -11,10 +11,12 @@ engine. A release binary embeds the network, so it has to embed the notice with 
 
 ## 1. NNUE training data — Leela Chess Zero self-play training data (ODbL 1.0 / DbCL 1.0)
 
-**This is an attribution obligation, and it applies to every Zenith binary from 3.0.0 onward**, because the
+**This is an attribution obligation, and it applies to every Trebuchet binary, and to every binary before the rename from the
+release then numbered 3.0.0 on**, because the
 network is embedded in the engine at build time (`Makefile NET`).
 
-The network Zenith ships from 3.0.0, `nets/reckless-lc0-runf-sb870.nnue`, was trained **entirely** on
+The network this engine has shipped since the release then numbered 3.0.0,
+`nets/reckless-lc0-runf-sb870.nnue`, was trained **entirely** on
 **Leela Chess Zero self-play training data**, published at
 <https://storage.lczero.org/files/training_data/>. That database is licensed under the **Open Database
 License 1.0 (ODbL-1.0)**, <http://opendatacommons.org/licenses/odbl/1.0/>, with its contents under the
@@ -43,14 +45,14 @@ URLs for each shard it writes.
   ODbL, and `nets/reckless-lc0-runf-sb870.nnue` is **not** ODbL-licensed: it is a Produced Work, and the
   licence's share-alike reaches derivative *databases*, not Produced Works made from one.
 - The network is **not** GPL merely because GPLv3 code was used to train it or reads it. Training weights is
-  not a derivative work of the training program, and the weights are a data file the engine loads; Zenith's
+  not a derivative work of the training program, and the weights are a data file the engine loads; Trebuchet's
   *source code* is GPLv3-or-later, and that is a separate matter from the network's status.
-- The network was **not** trained in this repository. Zenith has no trainer of its own: the trainers, the
+- The network was **not** trained in this repository. Trebuchet has no trainer of its own: the trainers, the
   architecture and the `RNNUE1` container live in
   [`nnue-training`](https://github.com/reckless-technology/nnue-training), the single source for the
-  Reckless NNUE, and this engine is a consumer that loads a net and verifies it. Zenith's `datagen` can
-  generate training data, but **it did not produce the shipped weights**, which is why the file does not
-  carry a `zenith-` name. The *data* is Leela's, under ODbL; the *network* came from the shared Reckless
+  Reckless NNUE, and this engine is a consumer that loads a net and verifies it. Trebuchet's `datagen` can
+  generate training data, but **it did not produce the shipped weights**, which is why the file's name says
+  `reckless-lc0`, the pipeline and the data, and not this engine's. The *data* is Leela's, under ODbL; the *network* came from the shared Reckless
   pipeline.
 
 See [NNUE_TRAINING.md §9](NNUE_TRAINING.md#9-current-release-net) for the net's architecture, lineage and
@@ -62,7 +64,7 @@ measurements.
 
 `src/uci.c` carries the 128-position `standard.epd` perft suite from Ethereal
 (<https://github.com/AndyGrant/Ethereal>) — FENs with their known-correct node counts, used as movegen
-reference data by `./build/zenith perft`. Ethereal is licensed GPL-3.0, which is compatible with Zenith's
+reference data by `./build/trebuchet perft`. Ethereal is licensed GPL-3.0, which is compatible with Trebuchet's
 GPL-3.0-or-later. **No Ethereal code is included or derived**: only the test positions and their expected
 counts.
 
@@ -72,10 +74,10 @@ counts.
 
 `src/book.c` implements the standard **Polyglot** `.bin` format. Its Zobrist key constants come from the
 public [book-format specification](http://hgm.nubati.net/book_format.html) (the 781 random values the format
-defines), and `./build/zenith bookcheck` validates Zenith's key computation against the 9 official spec test
-vectors. The format and its constants are a published specification; the implementation is Zenith's own.
+defines), and `./build/trebuchet bookcheck` validates Trebuchet's key computation against the 9 official spec test
+vectors. The format and its constants are a published specification; the implementation is Trebuchet's own.
 
-The opening book Zenith ships and embeds, `books/zenith-book-r5.bin`, is built **entirely from Zenith's own
+The opening book Trebuchet ships and embeds, `books/trebuchet-book-r5.bin`, is built **entirely from Trebuchet's own
 self-play** by `tools/build_book.py` and `tools/add_book_moves.py`. No third-party book is bundled. The
 optional `make get-book` convenience target *downloads* `performance.bin` from the GPL-3.0
 [python-chess](https://github.com/niklasf/python-chess) repository into the gitignored `books/`; that file is
@@ -85,16 +87,16 @@ not part of this repository and is not distributed with any release.
 
 ## 4. On the record: the earlier networks' training data (no notice owed)
 
-Zenith's networks up to and including `zenith-cap2` were trained on positions from a public self-play dataset
+This engine's networks up to and including `cap2` were trained on positions from a public self-play dataset
 generated by **PlentyChess**, by **Yoshie2000**. That data is no longer used, those networks are no longer in
 the tree, and **no release ships a network derived from it**, so nothing is owed here — the credit is kept
 because those networks were measurably stronger for having been trained on that data and the record should
 show where they came from. The full lineage is in
 [NNUE_TRAINING.md](NNUE_TRAINING.md#provenance-of-earlier-networks).
 
-The techniques Zenith implements — bitboards, magic bitboards, PVS, transposition tables,
+The techniques Trebuchet implements — bitboards, magic bitboards, PVS, transposition tables,
 null-move/LMR/futility pruning, SEE, NNUE, Lazy SMP — are published and textbook (see the
-[Chess Programming Wiki](https://www.chessprogramming.org)), and are implemented here independently. Zenith
+[Chess Programming Wiki](https://www.chessprogramming.org)), and are implemented here independently. Trebuchet
 shares no source code with any other engine.
 
 ---
@@ -115,10 +117,10 @@ The net and book tools in `tools/` need Python — and nothing else: every one o
 including `tools/rnnue1.py`, which is a verbatim copy of `nnue-training/spec/rnnue1.py` (GPL-3.0-or-later,
 Copyright (C) 2026 Jonny Reckless, the same licence and author as this repository, so it is a sibling copy
 and not third-party material). No release ships those tools and no binary links them, so Python is a
-build-time dependency of a developer's machine, not material Zenith distributes. The trainers that need
+build-time dependency of a developer's machine, not material Trebuchet distributes. The trainers that need
 PyTorch are in `nnue-training` and are not in this tree at all.
 
-**On bullet, and why no MIT notice is owed here.** `./build/zenith-bullet2text` (`datagen/datagen.c`)
+**On bullet, and why no MIT notice is owed here.** `./build/trebuchet-bullet2text` (`datagen/datagen.c`)
 reads the 32-byte `bulletformat::ChessBoard` record that the [bullet](https://github.com/jw1912/bullet)
 trainer writes. That is **format compatibility, independently implemented from the record layout** — no
 bullet code is included, derived from or linked here, so bullet's MIT licence attaches nothing to this

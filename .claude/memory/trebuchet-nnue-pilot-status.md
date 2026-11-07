@@ -1,6 +1,6 @@
 ---
-name: zenith-nnue-pilot-status
-description: NNUE net progression (pilot -> v5) and current strength vs HCE and pawnstar
+name: trebuchet-nnue-pilot-status
+description: NNUE net progression (pilot -> v5) and its strength at the time vs HCE and pawnstar
 metadata:
   type: project
 ---
@@ -17,7 +17,7 @@ CORRECT and validated: 0cp gate (engine == Python reference, bit-identical), col
 hugely — one iteration added +211 Elo and flipped the timed result positive; (3) 512 hidden is the sweet
 spot for this data (768 overfits); (4) speed matters — int16+AVX2 refresh (641k->1.08M nps) added ~+41 timed.
 
-**Best net of this era: `nets/zenith-pc2.nnue` (512 hidden; no longer in the tree — from 3.0.0 the shipped
+**Best net of this era: `pc2` (512 hidden; no longer in the tree — since the release then numbered 3.0.0 the shipped
 net is `nets/reckless-lc0-runf-sb870.nnue`, 1024 wide with 8 output heads).** Trained on the public PlentyChess
 dataset (via `bullet2text`), which broke the self-play plateau: pc1 (70M) was +154 over the best self-play
 net v6; pc2 (187M) +30 more. More data then saturated the 512 net.
@@ -33,4 +33,4 @@ is_legal's redundant copy-make). nps 641k→1.98M. Search: + IIR + singular exte
 **Gap to pawnstar (timed 8+0.08): −489 (v4) → −385 → −308 (speed) → −246 (pc1) → −211 (pc2).** Halved.
 Next levers: more PlentyChess shards (200M→500M+ via streaming), SPSA tuning of search margins for the
 NNUE eval scale, Lazy SMP + lockless TT.
-Related: [[zenith-goal-independence]] [[training-setup]]
+Related: [[trebuchet-goal-independence]] [[training-setup]]

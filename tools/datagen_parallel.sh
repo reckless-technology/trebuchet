@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (C) 2026 Jonny Reckless
-# Fan self-play data generation out across CPU cores. Each worker is an independent ./build/zenith-datagen
-# process (built by `make datagen`) with its own seed, writing one shard. Zenith generates its own dataset
+# Fan self-play data generation out across CPU cores. Each worker is an independent ./build/trebuchet-datagen
+# process (built by `make datagen`) with its own seed, writing one shard. Trebuchet generates its own dataset
 # (no external data).
 #
 #   tools/datagen_parallel.sh <gamesPerWorker> <outDir> [workers] [nodes] [openingPlies] [book.epd]
@@ -15,7 +15,7 @@ nodes="${4:-5000}"
 openingPlies="${5:-8}"
 book="${6:-}"
 net="${7:-}"
-generator="${DATAGEN_BIN:-./build/zenith-datagen}"
+generator="${DATAGEN_BIN:-./build/trebuchet-datagen}"
 
 mkdir -p "$outDir"
 echo "datagen: $workers workers x $gamesPerWorker games, nodes=$nodes -> $outDir"

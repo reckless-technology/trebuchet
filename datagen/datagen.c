@@ -303,7 +303,7 @@ int run_datagen(Engine *engine, const int argc, char **argv)
 // bulletformat ChessBoard (32 bytes): occ u64 | pcs[16] (4-bit pieces in occ set-bit order) | score i16
 // | result u8 (0/1/2) | ksq u8 | opp_ksq u8 | extra[3]. Board is stored from the side-to-move's POV:
 // nibble bit 3 = own(0)/opp(1), bits 0-2 = piece type; square is stm-relative. Emitting "white to move"
-// with own=white/opp=black reproduces exactly the stm/ntm feature indices Zenith's engine computes.
+// with own=white/opp=black reproduces exactly the stm/ntm feature indices Trebuchet's engine computes.
 int run_bullet2text(const int argc, char **argv)
 {
     if (argc < 3)

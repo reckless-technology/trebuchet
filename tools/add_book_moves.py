@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Add moves to a Polyglot book by hand: a new .bin with the given moves among the old book's entries.
 
-    python3 tools/add_book_moves.py <in.bin> <out.bin> [--engine ./build/zenith] --add <fen|startpos> <uci> <weight> ...
+    python3 tools/add_book_moves.py <in.bin> <out.bin> [--engine ./build/trebuchet] --add <fen|startpos> <uci> <weight> ...
 
 Each --add names a position (a FEN, or `startpos`), a legal move in it in UCI and the weight to store it with. The
 book's own entries are kept as they are; an added move the book already holds for that position is refused, so a
@@ -9,9 +9,9 @@ weight is never silently doubled. The output is key-sorted and big-endian with c
 tools/build_book.py emits (the same encoding, imported from it). As there, all chess knowledge comes from the engine:
 `polykey` gives each position's key and `moves` holds the move to the legal ones.
 
-books/zenith-book-r5.bin is books/zenith-book-r4.bin with 1.d4 added at the root (Jonny, 2026-10-20):
+books/trebuchet-book-r5.bin is books/trebuchet-book-r4.bin with 1.d4 added at the root (Jonny, 2026-10-20):
 
-    python3 tools/add_book_moves.py books/zenith-book-r4.bin books/zenith-book-r5.bin --add startpos d2d4 42
+    python3 tools/add_book_moves.py books/trebuchet-book-r4.bin books/trebuchet-book-r5.bin --add startpos d2d4 42
 
 r4 opens 1.e4 (115) and 1.c4 (54) and holds no 1.d4 there - the builder scored it outside its keep margin - but it
 holds ~2,100 positions of lines after 1.d4, built as replies for the side facing it. Weight 42 makes 1.d4 42 / 211 =
@@ -34,7 +34,7 @@ def run_cli(binary, *args):
     """One engine subcommand's output."""
     result = subprocess.run([binary, *args], capture_output=True, text=True)
     if result.returncode != 0:
-        raise SystemExit(f"zenith {args[0]} failed: {result.stderr.strip()}")
+        raise SystemExit(f"trebuchet {args[0]} failed: {result.stderr.strip()}")
     return result.stdout.strip()
 
 
@@ -42,7 +42,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("book", help="the Polyglot .bin to start from")
     parser.add_argument("out", help="the .bin to write")
-    parser.add_argument("--engine", default="./build/zenith")
+    parser.add_argument("--engine", default="./build/trebuchet")
     parser.add_argument("--add", nargs=3, action="append", required=True, metavar=("POSITION", "UCI", "WEIGHT"),
                         help="a position (FEN or startpos), a legal move in it, and its weight (1-65535)")
     args = parser.parse_args()

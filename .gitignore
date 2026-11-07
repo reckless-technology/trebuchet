@@ -16,14 +16,12 @@ __pycache__/
 
 # fastchess writes this into the working directory when running matches
 /config.json
-/zenith-ob
-/zenith-kb
-/zenith-*
+/trebuchet-*
 
 # Generated API documentation
 doc/html/
 
-# Opening books are downloaded on demand (make get-book), never committed - but Zenith's own, which are
+# Opening books are downloaded on demand (make get-book), never committed - but Trebuchet's own, which are
 /books/*
 !/books/README.md
-!/books/zenith-book-r*.bin
+!/books/trebuchet-book-r*.bin

@@ -1,4 +1,4 @@
-# Zenith build (C17). Single-shot whole-program compile so LTO sees everything (the engine is small).
+# Trebuchet build (C17). Single-shot whole-program compile so LTO sees everything (the engine is small).
 # A shipped build would fan out per microarch (x86-64-v2/v3/v4); -march=native is for local dev.
 # -D_POSIX_C_SOURCE is needed for clock_gettime/strtok_r under strict -std=c17 (not gnu17).
 # -D_DARWIN_C_SOURCE undoes that macro's visibility RESTRICTION on Apple headers (sys/sysctl.h needs the
@@ -15,10 +15,10 @@ ARCH_FLAG  = $(if $(ARCH),-march=$(ARCH))
 OPT       = -O3 $(ARCH_FLAG) -funroll-loops -flto -DNDEBUG
 WARN      = -Wall -Wextra -Wpedantic -Werror -Wshadow -Wno-unused-parameter
 # The version, MAJOR.MINOR.BUILD, from git alone (tools/version.sh): the nearest annotated vMAJOR.MINOR tag and the
-# commits since it; 0.0.0 with no such tag reachable. Compiled in as ZENITH_VERSION_STRING (src/version.h); nothing in
+# commits since it; 0.0.0 with no such tag reachable. Compiled in as TREBUCHET_VERSION_STRING (src/version.h); nothing in
 # the tree is edited to release. Evaluated once per make run (:=), so its warning shows once.
-ZENITH_VERSION := $(shell tools/version.sh)
-VERSION   = -DZENITH_VERSION_STRING='"$(ZENITH_VERSION)"'
+TREBUCHET_VERSION := $(shell tools/version.sh)
+VERSION   = -DTREBUCHET_VERSION_STRING='"$(TREBUCHET_VERSION)"'
 # Rewritten only when the version changes, and a prerequisite of every binary, so a new commit or tag rebuilds them.
 VERSION_STAMP = build/version.txt
 CFLAGS    = $(STD) $(OPT) $(WARN) $(VERSION)
@@ -42,7 +42,7 @@ DATAGEN_HDRS     = $(wildcard datagen/*.h)
 ENGINE_CORE_SRCS = $(filter-out src/main.c,$(SRCS))
 # All build outputs land in ./build (created on demand); `make clean` just removes it.
 BUILD_DIR = build
-BIN       = $(BUILD_DIR)/zenith
+BIN       = $(BUILD_DIR)/trebuchet
 # The shipped net (committed). It is embedded into every binary at build time (below) and doubles as the
 # `make check` nnuecheck target: the engine falls back to the embedded copy whenever EvalFile is unset or
 # fails to load, so a bare binary is always full NNUE strength with no external files.
@@ -50,7 +50,7 @@ NET       = nets/reckless-lc0-runf-sb870.nnue
 EMBED_OBJ = $(BUILD_DIR)/embedded_net.o
 # The shipped opening book (committed), embedded the same way: `setoption name OwnBook value true` works
 # with no BookFile (OwnBook still defaults false — testing stays bookless).
-BOOK_BIN  = books/zenith-book-r5.bin
+BOOK_BIN  = books/trebuchet-book-r5.bin
 EMBED_BOOK_OBJ = $(BUILD_DIR)/embedded_book.o
 
 .PHONY: all debug clean perft bench baseline doc check coverage format hooks get-book pext tables datagen datagen-debug FORCE
@@ -61,10 +61,10 @@ $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 
 $(VERSION_STAMP): FORCE | $(BUILD_DIR)
-	@[ "$$(cat $@ 2>/dev/null)" = "$(ZENITH_VERSION)" ] || echo "$(ZENITH_VERSION)" > $@
+	@[ "$$(cat $@ 2>/dev/null)" = "$(TREBUCHET_VERSION)" ] || echo "$(TREBUCHET_VERSION)" > $@
 
 # The compiler and the target and optimisation flags, rewritten only when they change, and a prerequisite of the
-# engine: without it `make ARCH=x86-64-v2` after `make` would find build/zenith up to date and leave the native build
+# engine: without it `make ARCH=x86-64-v2` after `make` would find build/trebuchet up to date and leave the native build
 # in place, so a check or a benchmark of the portable build would run the wrong binary.
 FLAGS_STAMP = $(BUILD_DIR)/flags.txt
 $(FLAGS_STAMP): FORCE | $(BUILD_DIR)
@@ -92,16 +92,16 @@ DEBUG_FLAGS = $(STD) $(VERSION) -O1 -g -fsanitize=address,undefined -fno-sanitiz
 debug: $(SRCS) $(HDRS) $(INCS) $(EMBED_OBJ) $(EMBED_BOOK_OBJ) $(VERSION_STAMP) | $(BUILD_DIR)
 	$(CC) $(DEBUG_FLAGS) $(SRCS) $(EMBED_OBJ) $(EMBED_BOOK_OBJ) -o $(BIN)-debug $(LDLIBS)
 
-# PEXT (BMI2) sliding-attack lookups instead of magic bitboards -> ./build/zenith-pext. Output is bit-identical
+# PEXT (BMI2) sliding-attack lookups instead of magic bitboards -> ./build/trebuchet-pext. Output is bit-identical
 # to the magic build (same bench signature); ~2% faster perft / ~1.7% faster search on Intel Haswell+ and
 # AMD Zen3+, but MUCH slower on AMD Zen1/Zen2 (microcoded pext) — so it is opt-in and magic stays the
 # portable default. Needs a BMI2 target (the default -march=native provides it; a real release enables it
 # only for the x86-64-v3+ microarch variants).
 pext: $(SRCS) $(HDRS) $(INCS) $(EMBED_OBJ) $(EMBED_BOOK_OBJ) $(VERSION_STAMP) | $(BUILD_DIR)
-	$(CC) $(CFLAGS) -DZENITH_USE_PEXT $(SRCS) $(EMBED_OBJ) $(EMBED_BOOK_OBJ) -o $(BIN)-pext $(LDLIBS) $(RELEASE_LDFLAGS)
+	$(CC) $(CFLAGS) -DTREBUCHET_USE_PEXT $(SRCS) $(EMBED_OBJ) $(EMBED_BOOK_OBJ) -o $(BIN)-pext $(LDLIBS) $(RELEASE_LDFLAGS)
 	@echo "built $(BIN)-pext (PEXT/BMI2 sliding attacks; bit-identical to $(BIN))"
 
-# NNUE training-data tools -> ./build/zenith-datagen + ./build/zenith-bullet2text. Standalone executables
+# NNUE training-data tools -> ./build/trebuchet-datagen + ./build/trebuchet-bullet2text. Standalone executables
 # (they replaced the old `datagen`/`bullet2text` engine subcommands), same single-shot whole-program compile
 # as the engine: the self-play generator runs real searches, so both link the engine core (LTO drops what
 # the converter never calls). -Isrc lets datagen/ include the engine headers by name.
@@ -160,7 +160,7 @@ check: $(BIN)
 # Line coverage of src/ by the gates, with LLVM's source-based coverage: an instrumented engine (-O2 -g, the same
 # sources and embedded net and book, no LTO) in build/cov/, every `make check` gate run against it - the front-end
 # gate with --terminal, which on Linux and macOS also runs legalcheck on a pseudo-terminal for its progress line - plus
-# CI's threaded UCI smoke, each process writing build/cov/<pid>.profraw, then merged into build/cov/zenith.profdata and
+# CI's threaded UCI smoke, each process writing build/cov/<pid>.profraw, then merged into build/cov/trebuchet.profdata and
 # reported over src/: the table on stdout, build/cov/lcov.info for an editor or a coverage service, and an HTML tree
 # under build/cov/html/. It fails when the lines covered fall under COVERAGE_MIN per cent of src/'s (CI's coverage job
 # runs it on Linux). src/ is the engine every release ships; the developer tools no release ships - datagen/
@@ -171,12 +171,12 @@ check: $(BIN)
 # Linux whichever llvm-profdata is on the PATH, else the one versioned like clang (llvm-profdata-18 for clang 18) -
 # LLVM_SUFFIX=-18, or LLVM_PROFDATA= and LLVM_COV=, name them outright; on Windows MSYS2 CLANG64's llvm-tools.
 COV_DIR    = $(BUILD_DIR)/cov
-COV_BIN    = $(COV_DIR)/zenith
+COV_BIN    = $(COV_DIR)/trebuchet
 COV_FLAGS  = $(STD) -O2 -g $(ARCH_FLAG) -DNDEBUG -fprofile-instr-generate -fcoverage-mapping $(WARN) $(VERSION)
-COV_DATA   = $(COV_DIR)/zenith.profdata
+COV_DATA   = $(COV_DIR)/trebuchet.profdata
 COVERAGE_MIN ?= 90
 # llvm-cov is a native program on Windows: it needs the .exe the linker added, where MSYS2's make and bash find
-# build/cov/zenith without it.
+# build/cov/trebuchet without it.
 EXE        = $(if $(filter Windows_NT,$(OS)),.exe)
 ifeq ($(shell uname -s),Darwin)
 LLVM_PROFDATA ?= xcrun llvm-profdata
@@ -196,7 +196,7 @@ $(COV_BIN): $(SRCS) $(HDRS) $(INCS) $(EMBED_OBJ) $(EMBED_BOOK_OBJ) $(VERSION_STA
 # %m: every process merges its counts into the one profile under a file lock (the runtime's online merging), so no
 # run overwrites another's. A file per process (%p, the pid) is not enough: Windows reuses pids within a run, and the
 # front-end gate starts some hundred processes, so a later one could replace the bench gate's profile.
-coverage: export LLVM_PROFILE_FILE = $(COV_DIR)/zenith-%m.profraw
+coverage: export LLVM_PROFILE_FILE = $(COV_DIR)/trebuchet-%m.profraw
 coverage: $(COV_BIN)
 	@$(LLVM_PROFDATA) --version >/dev/null 2>&1 || { echo "coverage: $(LLVM_PROFDATA) not found (set LLVM_SUFFIX, or LLVM_PROFDATA and LLVM_COV)" >&2; exit 1; }
 	@rm -f $(COV_DIR)/*.profraw $(COV_DATA)
@@ -239,7 +239,7 @@ doc:
 
 # Download a free Polyglot opening book (no book is committed; books/ is gitignored). This is
 # performance.bin (~93k positions) as shipped in the GPL-3.0 python-chess repo, license-compatible with
-# Zenith's own GPL-3.0-or-later; original source is the free WBEC-Ridderkerk collection. Idempotent: a
+# Trebuchet's own GPL-3.0-or-later; original source is the free WBEC-Ridderkerk collection. Idempotent: a
 # correct existing copy is left untouched. Then: setoption name BookFile value $(BOOK) / OwnBook true.
 BOOK     = books/performance.bin
 BOOK_URL = https://raw.githubusercontent.com/niklasf/python-chess/master/data/polyglot/performance.bin

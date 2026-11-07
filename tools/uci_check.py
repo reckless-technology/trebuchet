@@ -46,7 +46,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 import rnnue1  # noqa: E402  (the shared net container, beside this script in tools/)
 
 NET = "nets/reckless-lc0-runf-sb870.nnue"
-BOOK = "books/zenith-book-r5.bin"
+BOOK = "books/trebuchet-book-r5.bin"
 START_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 TIMEOUT = 120  # seconds any one engine process may take: generous for an instrumented build on a slow runner
 
@@ -358,7 +358,7 @@ def check_options(gate, nnue_paths):
     wanted = {"Hash", "Threads", "Move Overhead", "Clear Hash", "EvalFile", "OwnBook", "BookFile", "RfpMargin",
               "NmpDivisor", "LmpBase", "FutilityBase", "FutilityMargin", "SeeCaptureMargin", "LmrBase", "LmrDivisor",
               "SingularMargin", "AspirationDelta", "HistoryMax"}
-    gate.report(names == wanted and "readyok" in lines and any(line.startswith("id name Zenith") for line in lines),
+    gate.report(names == wanted and "readyok" in lines and any(line.startswith("id name Trebuchet") for line in lines),
                 "uci", f"{len(names)} options", "(id, every option, uciok, readyok)")
 
     # A fixed-depth single-threaded search from a fresh process is deterministic, so its node count shows whether

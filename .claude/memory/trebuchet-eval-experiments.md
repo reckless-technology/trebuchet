@@ -1,27 +1,27 @@
 ---
-name: zenith-eval-experiments
+name: trebuchet-eval-experiments
 description: Results log of NNUE eval-architecture experiments (output buckets, king buckets, ...)
 metadata:
   type: project
 ---
 
-Running log of Zenith NNUE eval experiments (all SPRT-gated vs the current best net). Goal: stronger eval to close the single-thread gap to pawnstar (see [[pawnstar-gap-benchmarks]]).
+Running log of Trebuchet NNUE eval experiments (all SPRT-gated vs the current best net). Goal: stronger eval to close the single-thread gap to pawnstar (see [[pawnstar-gap-benchmarks]]).
 
 ## Output buckets (8, by piece count) — NEUTRAL, not shipped (2026-07-20)
 - 8 output heads selected by `clamp((pieceCount-2)/4, 0, 7)`. Full impl (ZNNUE2 magic), 0cp gate + nnuecheck PASS.
-- Trained `zenith-ob1` (512, 14ep, wdl 0.3) on the SAME 187M PlentyChess cache/recipe as pc2.
+- Trained `ob1` (512, 14ep, wdl 0.3) on the SAME 187M PlentyChess cache/recipe as pc2.
 - **Val loss IMPROVED: 0.015925 vs pc2's 0.016161 (~1.5% better MSE fit).**
 - **BUT SPRT vs pc2 (tc=8+0.08, 3000 games): −5.9 ± 8.4 Elo (49.15%), LLR never neared H1.** Neutral-to-slightly-negative.
 - **Lesson: lower val loss did NOT translate to Elo.** Output buckets add eval discontinuities at piece-count
   boundaries (a capture crossing a threshold jumps the eval), which can add search noise and cancel the fit gain.
   At 512 hidden / 190M positions, output buckets don't pay off in isolation. Shelved, not deleted.
-- Work preserved: `scratchpad/output_buckets.patch` + `scratchpad/zenith-ob1.nnue`. Output buckets typically help
+- Work preserved: `scratchpad/output_buckets.patch` + `scratchpad/ob1.nnue`. Output buckets typically help
   more layered on king-bucketed inputs / bigger nets — revisit ON TOP of king buckets if those win.
 
 ## King buckets (8, file-pairs × board-halves, ZNNUE3) — SPEED-BOUND, +4 Elo (2026-07-20)
 - FT [768]→[6144][512] (8× rows); refresh-on-king-move when the moving king crosses a bucket boundary.
   All gates PASS (perft, 0cp all 8 buckets, nnuecheck incl. castling, color-mirror symmetry). Design:
-  `scratchpad/king_buckets_design.md`. Trained `zenith-kb1` (pc2 recipe): **best val loss yet, 0.01575**.
+  `scratchpad/king_buckets_design.md`. Trained `kb1` (pc2 recipe): **best val loss yet, 0.01575**.
 - **Timed SPRT vs pc2: −0.2 ± 8.5 (NEUTRAL).** BUT **fixed-depth 9: +21.3 ± 18.8 Elo** → the eval is
   genuinely stronger; the 8× FT (6.3MB, blows cache) + king-move refresh cost the speed back. nps hit:
   ~3% opening, ~6% midgame, **~20% endgame** (active kings ⇒ frequent bucket-crossing refreshes).
@@ -36,13 +36,13 @@ Running log of Zenith NNUE eval experiments (all SPRT-gated vs the current best 
   strength that outpaces the speed cost → **more training data** (no speed cost). Blocked by RAM: the
   all-in-RAM featuriser caps at ~230M positions on this 62GB box; going bigger needs a streaming/mmap trainer.
 
-## King buckets + BIG DATA (zenith-kb2) — SHIPPED, +57 Elo (2026-07-21)
+## King buckets + BIG DATA (kb2) — SHIPPED, +57 Elo (2026-07-21)
 - Root cause of kb1's marginal gain was NET STRENGTH, not the architecture: king buckets give eval headroom
   (+21 fixed-depth) but at 190M positions the eval edge barely beat the ~6% speed cost. Fix = more data
   (no speed cost). Refactored the trainer for scale: chunked `--featurise-shard` (pre-allocate + fill, ~13GB
   RAM/proc, parallelizable) + `--shard-dir` streaming training (one ~95M-position shard in RAM at a time,
   shard-order + in-shard shuffle). Lets us train past the ~230M all-in-RAM ceiling on this 62GB box.
-- Trained `zenith-kb2`: 8 PlentyChess shards = **745M positions** (7 train ~650M + 1 val held out), 8 epochs,
+- Trained `kb2`: 8 PlentyChess shards = **745M positions** (7 train ~650M + 1 val held out), 8 epochs,
   same recipe (512, wdl 0.3, lr 1.2e-3). **Best val loss yet: 0.015417** (pc2 0.01616, kb1 0.01575).
 - **SPRT vs pc2: +57 Elo, H1 ACCEPTED at 954 games (58.1%, LLR 2.96).** Decisive — the biggest single win
   of the project. king buckets (2M+ RAM finny cache) + 3.4× data. Shipped as the default net; ZNNUE1
@@ -51,7 +51,7 @@ Running log of Zenith NNUE eval experiments (all SPRT-gated vs the current best 
   eval strength, zero speed cost), not more architecture.** Data scale >> capacity tweaks at this stage.
 
 ## More data: kb3 (1.4B positions) — +8 Elo, DIMINISHING RETURNS (2026-07-22)
-- Trained `zenith-kb3` on all 16 PlentyChess shards (~1.4B positions, 2x kb2's 650M), same recipe, 6 epochs.
+- Trained `kb3` on all 16 PlentyChess shards (~1.4B positions, 2x kb2's 650M), same recipe, 6 epochs.
   Val loss 0.015195 (kb2 0.015417, pc2 0.016161). **SPRT vs kb2: +7.9 ± 7.4 (CI just excludes 0), LLR +1.33.**
 - **Data returns are diminishing:** 190M→650M gave +57 (kb2), 650M→1.4B gave only +8 (kb3). The PlentyChess
   data lever is largely tapped out. Shipped kb3 anyway (strictly-better net, same size/speed = free upgrade),
@@ -59,10 +59,10 @@ Running log of Zenith NNUE eval experiments (all SPRT-gated vs the current best 
 - The streaming trainer (`--shard-dir`) + parallel `--featurise-shard` handled 1.4B on a 62GB box fine.
 
 ## Pawnstar-idea adoption experiments (2026-07-23/24) — 1 shipped, 2 neutral
-After the corrected benchmarks showed Zenith AHEAD of pawnstar, we tried adopting the three techniques pawnstar
-has that Zenith lacked:
+After the corrected benchmarks showed Trebuchet AHEAD of pawnstar, we tried adopting the three techniques pawnstar
+has that Trebuchet lacked:
 1. **Checking-aware LMP/futility** (never prune checking quiets): SPRT **NEUTRAL** (−3.0 ± 14.1 @ 822 games,
-   cancelled). Zenith's SPSA-tuned margins already price in check-blind pruning; pawnstar needs the exemption
+   cancelled). Trebuchet's SPSA-tuned margins already price in check-blind pruning; pawnstar needs the exemption
    because its cruder untuned pruning over-prunes. KEPT the infrastructure: `gives_check_fast` +
    `discovered_check_candidates` (differentially validated in legalcheck, 0 mismatches / 7.26M nodes, in CI) —
    reusable for future check-aware ideas (e.g. quiet checks in qsearch).
@@ -76,7 +76,7 @@ has that Zenith lacked:
    change trended neutral-negative (−4.7 @ ~300 games, cancelled).
 
 **Meta-lesson: an engine's techniques don't transfer just because the engine is strong.** Pawnstar's tricks
-compensate for ITS weaknesses (crude LMR, no futility/SEE-prune/aspiration/corrhist). Zenith's tuned search
+compensate for ITS weaknesses (crude LMR, no futility/SEE-prune/aspiration/corrhist). Trebuchet's tuned search
 already extracts what those tricks provide. Adopt ideas that fix a measured cost (eval cache → uncached qsearch
 stand-pat), not ideas that exist in the other engine.
 
@@ -88,7 +88,7 @@ diminishing data returns and pivot to speed once eval scaling flattens. See [[pa
 **Improving heuristic: NO GAIN (2026-07-26).** Standard is-eval-better-than-2-plies-ago gating RFP margin
 (depth-1 when improving) + LMP quota (halved when not): bench nodes -33% at depth 13, but SPRT [0,5] @
 8+0.08 vs pre-change baseline capped at 4000 games WITHOUT verdict: +1.74 ± 6.32 Elo, LLR 0.08. Early +8
-readings regressed to ~+2 as the sample grew. Not landed (discipline: unproven = no). Zenith's tuned static
+readings regressed to ~+2 as the sample grew. Not landed (discipline: unproven = no). Trebuchet's tuned static
 margins apparently already capture most of what improving-conditioning buys elsewhere; a retry should
 co-tune the margins with SPSA rather than bolting improving onto margins tuned without it.
 
@@ -116,7 +116,7 @@ contract change requires full refeaturisation (~2.5h, 16 shards; s08-s15 texts r
 `bullet2text IN OUT 0 4` — maxRecords=0, **stride 4**; verified old row counts == ceil(records/4) — see
 scratchpad refeat_v5.sh). Long-running background jobs must be launched with `setsid nohup` so a Claude
 Code harness restart cannot kill them (the first refeaturisation run died this way mid-shard). Net
-zenith-km1 training on the same ob2 recipe; SPRT vs ob2 pending.
+km1 training on the same ob2 recipe; SPRT vs ob2 pending.
 
 **Embedded net + HCE removal (2026-07-28).** The shipped net is embedded into every binary at build time
 (tools/embed_net.py -> generated C array -> build/embedded_net.o, cached; +3.8s once per net change, zero
@@ -147,8 +147,8 @@ bench re-pinned 1,391,394. Loader now rejects size-mismatched nets (the format h
 First cap1 training run was killed by a HOST NVIDIA DRIVER UPDATE mid-run (CUDA context wedged, main
 thread spinning in synchronize, 6h silent) — diagnose via per-thread CPU + no epoch cadence; fresh
 contexts worked immediately. Long GPU runs now get a stall watchdog; train.py deserves epoch checkpoints.
-ALSO: never rebuild ./build/zenith while a pipeline consumes it (book builder crashed exec'ing a
-half-written binary) — long-running consumers get dedicated binary copies (data/book/zenith-worker).
+ALSO: never rebuild ./build/trebuchet while a pipeline consumes it (book builder crashed exec'ing a
+half-written binary) — long-running consumers get dedicated binary copies (data/book/trebuchet-worker).
 Next lever: SPSA pass 3 (search params tuned for 512-era eval speed), then data refresh.
 
 **Data refresh at 1024 (cap2): +10 Elo fixed-depth SPRT over cap1, H1 at 5,754 games (2026-08-01).**
@@ -160,6 +160,6 @@ expect smaller returns. Training-run ops: SECOND CUDA wedge (USB/network re-enum
 first attempt at epoch 6 -> train.py now checkpoints per epoch with --resume (PR #35), and
 --validation-shard pins the held-out shard (PR #34; the default last-sorted shard SILENTLY CHANGES when
 shards are added — nearly corrupted comparability). Rerun reproduced the lost curve exactly (epoch-seeded
-shuffle). Shipped as embedded default up to 2.1.x; bench 1,390,606. **Superseded from 3.0.0** by
+shuffle). Shipped as embedded default in the releases up to the one then numbered 2.1.x; bench 1,390,606. **Superseded at the release then numbered 3.0.0** by
 `reckless-lc0-runf-sb870` (Leela Chess Zero data, shared pipeline, bench 1,653,778) — whose strength in
-Zenith is not yet measured; cap2 is the baseline for that match and stays in the tree.
+Trebuchet is not yet measured; cap2 is the baseline for that match, no longer in the tree (git history has it).

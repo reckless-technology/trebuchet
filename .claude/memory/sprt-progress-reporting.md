@@ -21,7 +21,7 @@ the final `SPRT (` verdict line. Relay each milestone to Jonny in one line. Same
 (per-100-iteration lines) and training (per-epoch lines) — already standard; SPRT was the gap.
 
 **Engine invariants (Jonny's explicit rule):** every match harness sets BOTH engines explicitly — never
-rely on defaults: `option.Threads=1 option.Hash=64 option.OwnBook=false`, and no pondering (Zenith has no
+rely on defaults: `option.Threads=1 option.Hash=64 option.OwnBook=false`, and no pondering (Trebuchet has no
 Ponder option; fastchess does not ponder — re-verify if either changes). Defaults drift (the embedded book
 made OwnBook semantics richer; pawnstar's Threads=32/OwnBook=true burned a whole measurement once).
 Verify the pins landed via /proc/<fastchess>/cmdline, not by trusting the launcher script.
