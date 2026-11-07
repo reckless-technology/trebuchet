@@ -64,7 +64,7 @@ wrong net apart only by its file size, which is the exact failure the shared con
   dependency is the point. It loads unchanged — identical architecture and `RNNUE1`
   header, `nnuecheck` 3/3 at `max|diff| 0` and the shared `pytorch/verify.py` 0 cp over 4,000 positions — and moves
   the bench signature 1,390,606 -> 1,653,778. **Measured in Trebuchet afterwards, against `cap2`: +9.82 Elo**,
-  95% +1.27 to +18.36 (4,000 games, 8+0.08, lin-0, 2026-10-30; NNUE_TRAINING.md has the rest), which clears a
+  95% +1.18 to +18.47 (4,000 games, 8+0.08, lin-0, 2026-10-30; NNUE_TRAINING.md has the rest), which clears a
   non-inferiority bar and does not say the new data made the engine stronger. The +9.99 Elo at 8+0.08 and +1.13 at
   12+0.12 measured for this net are **pawnstar's numbers against pawnstar's old net** and do not transfer.
 - Trebuchet's `datagen` self-play generator trained only the `v1`-`v5` pilots and the opening book. **No net

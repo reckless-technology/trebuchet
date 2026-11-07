@@ -9,8 +9,8 @@ metadata:
 ---
 
 **2026-11-07 (UTC), the current releases: Trebuchet 1.0.0 is +144.30 Elo over Pawnstar 2.2.0, single-thread.**
-4,000 games, +1787 =1998 -215, 69.65%, 95% +134.37 to +154.24 allowing for opening correlation (ICC 0.157,
-design effect 1.895; nominal +137.09 to +151.52). lin-0 (Ryzen 7 6800H, 8 physical cores), fastchess 1.8.2
+4,000 games, +1787 =1998 -215, 69.65%, 95% +134.35 to +154.49 allowing for opening correlation (ICC 0.157,
+design effect 1.947; nominal +137.15 to +151.58). lin-0 (Ryzen 7 6800H, 8 physical cores), fastchess 1.8.2
 alpha, published release binaries frozen and re-hashed, no CI job alongside, 8+0.08, concurrency 7, paired
 colours, 306 lines (298 distinct positions) from the TSCP-derived set, draw movenumber=40 movecount=8 score=20,
 resign movecount=3 score=600, Threads=1, Hash=64, own book off, game count fixed in advance. Evidence:

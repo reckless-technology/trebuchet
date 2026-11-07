@@ -10,7 +10,7 @@ Trebuchet is a from-scratch UCI chess engine in **C17** (~5,300 lines, `src/*.{h
 C++20, preserved at git tag `cpp-final`). It is feature-complete: king-bucketed NNUE, Lazy SMP, an
 SPSA-tuned search, and a Polyglot opening book — and it led its reference engine (pawnstar) at every
 configuration tested in July 2026. Measured since, single-thread only: Trebuchet 1.0.0 is **+144.30 Elo** over
-Pawnstar 2.2.0, 95% +134.37 to +154.24 (8+0.08, lin-0, 2026-11-07 UTC; multi-thread not re-measured;
+Pawnstar 2.2.0, 95% +134.35 to +154.49 (8+0.08, lin-0, 2026-11-07 UTC; multi-thread not re-measured;
 NNUE_TRAINING.md "Current release net" has the conditions). Read [README.md](README.md) for the architecture and
 [NNUE_TRAINING.md](NNUE_TRAINING.md) for the training pipeline.
 
@@ -278,7 +278,7 @@ architecture change here is a change owed to all of them — see
   (same shape and container; `nnuecheck` and the shared `verify.py` clean) and moves the bench signature
   1,390,606 -> **1,653,778**, which is an eval change, not a strength result. Figures measured for this net
   in pawnstar are pawnstar's and do not transfer. **Measured in Trebuchet afterwards, against `cap2`: +9.82
-  Elo**, 95% +1.27 to +18.36 (4,000 games, single-threaded self-play at 8+0.08, concurrency 7, lin-0, 2026-10-30;
+  Elo**, 95% +1.18 to +18.47 (4,000 games, single-threaded self-play at 8+0.08, concurrency 7, lin-0, 2026-10-30;
   NNUE_TRAINING.md has the rest). The bar is non-inferiority and the interval only just excludes zero, so it does
   not say the new data made the engine stronger. **The swap did not wait on that measurement**: the nets
   up to `cap2` were trained on **PlentyChess** self-play positions (by Yoshie2000, up to 2.15B),
