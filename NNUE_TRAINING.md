@@ -375,7 +375,8 @@ The attribution is kept here deliberately. Those networks were measurably strong
 trained on that data, and the record should show where they came from.
 
 `cap1` and `cap2` are no longer in the tree, so no release ships a net derived
-from that data. Trebuchet's own `datagen` generator is option A above and can train a net, but the shipped
+from that data. They lived at `nets/zenith-cap1.nnue` and `nets/zenith-cap2.nnue` (the engine was then called
+Zenith) and can be found in git history. Trebuchet's own `datagen` generator is option A above and can train a net, but the shipped
 nets took option B.
 
 The current net is not a product of a trainer of this engine's own either, which is why its name says

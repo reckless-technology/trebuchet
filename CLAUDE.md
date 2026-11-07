@@ -279,8 +279,8 @@ architecture change here is a change owed to all of them — see
   up to `cap2` were trained on **PlentyChess** self-play positions (by Yoshie2000, up to 2.15B),
   that data is no longer used, and removing the dependency is the point — so the match says what the
   change cost, not whether to make it. **`cap1` and `cap2` are REMOVED
-  from the tree** as of the release then numbered 3.0.0 (git history preserves them, README.md's note says
-  where); the only net in `nets/` is that release's, and
+  from the tree** as of the release then numbered 3.0.0 (git history preserves them, NNUE_TRAINING.md's "Provenance of earlier networks"
+  says where); the only net in `nets/` is that release's, and
   nothing may point a build or a fixture at a PlentyChess-derived net again. The attribution stays in the
   documents deliberately — those nets were measurably stronger for that data; see NNUE_TRAINING.md
   "Provenance of earlier networks". `datagen` trained only the `v1`-`v5` pilots and the opening book.
