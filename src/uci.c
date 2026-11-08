@@ -3,6 +3,15 @@
 /**
  * @file
  * @brief The UCI protocol loop, the Lazy-SMP search coordinator, and the CLI self-test subcommands.
+ *
+ * **One stdio call per line of output.** While a search runs, two threads can print to stdout at once: this UCI thread
+ * (readyok, the `uci` block, `d`, the notices) and the coordinator, which runs the main search and prints its info
+ * lines (search.c) and then bestmove; the Lazy-SMP helpers print nothing. C11 gives every stream call the stream's
+ * own lock (7.21.2), so a line written in a single call reaches the pipe unbroken whoever else is printing; a line
+ * written in several calls does not, and a `readyok` once landed inside an info line that way (`pvreadyok`). So every
+ * line on those paths is one `printf`/`fputs`, newline included, and a line built in pieces is built in a buffer
+ * first. A multi-line block (`uci`, the notices) may interleave with a search's lines between its lines, never inside
+ * one. The CLI subcommands run on one thread, with nothing else printing.
  */
 #include "uci.h"
 #include "book.h"

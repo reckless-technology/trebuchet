@@ -1063,15 +1063,21 @@ Move searcher_go(Searcher *searcher, Position root, const SearchLimits *lim, con
             {
                 snprintf(score_str, sizeof score_str, "cp %d", score);
             }
-            printf("info depth %d seldepth %d score %s nodes %llu nps %llu time %lld hashfull %d pv", depth,
-                   searcher->selective_depth, score_str, (unsigned long long)searcher->nodes,
-                   (unsigned long long)nodes_per_second, (long long)elapsed_ms, tt_hash_full(&searcher->engine->tt));
+            // Built whole, then written in ONE call: the UCI thread prints readyok (and the rest) while this runs,
+            // and a line written in pieces let it land in the middle (uci.c, "One stdio call per line of output").
+            char line[256 + MAX_PLY * 6]; // the header is under 256 bytes; each pv move is at most " a7a8q"
+            int  length = snprintf(
+                line, sizeof line, "info depth %d seldepth %d score %s nodes %llu nps %llu time %lld hashfull %d pv",
+                depth, searcher->selective_depth, score_str, (unsigned long long)searcher->nodes,
+                (unsigned long long)nodes_per_second, (long long)elapsed_ms, tt_hash_full(&searcher->engine->tt));
             for (int pv_index = 0; pv_index < searcher->pv_len[0]; pv_index++)
             {
                 char uci_buf[8];
-                printf(" %s", move_to_uci(searcher->pv_table[0][pv_index], uci_buf));
+                length += snprintf(line + length, sizeof line - (size_t)length, " %s",
+                                   move_to_uci(searcher->pv_table[0][pv_index], uci_buf));
             }
-            printf("\n");
+            snprintf(line + length, sizeof line - (size_t)length, "\n");
+            fputs(line, stdout);
             fflush(stdout);
         }
 
