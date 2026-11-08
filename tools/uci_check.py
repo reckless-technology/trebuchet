@@ -25,6 +25,8 @@ GUI, a book builder or a test harness actually talks to, by running the binary a
 - a search stopped before depth 1 finishes - by a node budget, movetime 1, a fallen flag or a `stop` - which must
   still answer with a legal move (the TT move when it has one), and `stop` sent straight after `go infinite`, which
   must never be lost;
+- every line whole while two threads print: `stop`, `isready` and `uci` sent straight after `go`, many times, must
+  never split a search's info line or glue a readyok into it;
 - malformed input, after which the engine must still answer isready.
 
 With --terminal it also runs legalcheck on a pseudo-terminal (POSIX only), resizing it as the gate runs, and holds
@@ -704,6 +706,37 @@ def check_stop_straight_after_go(gate):
                 "(go infinite then stop at once, Threads 2: every stop ends the search with a legal move)")
 
 
+UCI_MOVE = r"(?:[a-h][1-8][a-h][1-8][nbrq]?|0000)"
+# Every line a session can print here, each a whole message: the banner, the `uci` block, readyok, bestmove, a search's
+# info line, an info string, and the session's own exit marker.
+WHOLE_UCI_LINE = re.compile("|".join([
+    r"Trebuchet \S+ compiled .+", r"id (?:name|author) .+", r"option name .+", r"uciok", r"readyok",
+    rf"bestmove {UCI_MOVE}", r"info string .+", r"<exit 0>",
+    r"info depth \d+ seldepth \d+ score (?:cp|mate) -?\d+ nodes \d+ nps \d+ time \d+ hashfull \d+ pv"
+    rf"(?: {UCI_MOVE})*"]))
+
+
+def check_lines_are_whole(gate, rounds=2000):
+    """Every line the engine prints is one whole UCI message, whichever threads print at once. The search thread wrote
+    each info line in pieces - the header, then each pv move, then the newline - so a `readyok` from the UCI thread
+    could land between two of them: `info depth 1 ... pvreadyok`, then a stray ` g8g7`. It did 13 times in about
+    4,600 tries on lin-0 (2026-11-07), with `stop` and `isready` sent 0-3 ms after `go`; every few rounds a `uci` puts
+    its id and option block in the same window."""
+    steps = ["setoption name Threads value 1", "position startpos"]
+    for round_index in range(rounds):
+        steps += ["go infinite", round_index % 4 / 1000, "stop"]
+        if round_index % 8 == 7:
+            steps += ["uci"]
+        steps += [("isready", r"readyok")]  # unanchored: a readyok glued into an info line still ends the wait
+    lines = gate.session(steps)
+    broken = [line for line in lines if not WHOLE_UCI_LINE.fullmatch(line)]
+    answers = bestmoves(lines)
+    gate.report(not broken and len(answers) == rounds and lines.count("readyok") == rounds, "lines",
+                f"{len(broken)} broken", f"(go, stop and isready at once, {rounds} rounds: every line one whole message"
+                f"{'; first broken: ' + repr(broken[0]) if broken else ''})")
+    return len(broken)
+
+
 def check_unsupported_castling_rights(gate):
     """A castling field can claim a right the board cannot support, and the parse must drop it.
 
@@ -846,6 +879,7 @@ def main():
         check_positions_and_go(gate)
         check_stop_before_depth_one(gate)
         check_stop_straight_after_go(gate)
+        check_lines_are_whole(gate)
         check_unsupported_castling_rights(gate)
         check_malformed(gate)
         if is_terminal:
