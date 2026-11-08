@@ -43,8 +43,8 @@ typedef struct SearchParams
  * @brief Search state shared (read-mostly) by every Lazy-SMP thread of one engine.
  *
  * `is_stop_requested` is the one live flag: the main thread (or a UCI "stop") sets it and every thread
- * exits. Keeping the
- * shared state out of Searcher keeps Searcher copyable, so a thread pool can live in one flat allocation.
+ * exits. Whoever starts a search clears it first, and searcher_go never does (a stop sent early must stand). Keeping
+ * the shared state out of Searcher keeps Searcher copyable, so a thread pool can live in one flat allocation.
  */
 typedef struct SearchShared
 {

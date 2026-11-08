@@ -22,6 +22,9 @@ GUI, a book builder or a test harness actually talks to, by running the binary a
   through castling (neither a pawn move nor a capture) and reset by a capture and en passant, the fifty-move draw
   reached by castling, a mate on the hundredth ply (mate, not the fifty-move draw), a clock, a fallen flag, a node
   budget, movetime, perft, infinite with stop, unknown tokens, a mate, a mated position;
+- a search stopped before depth 1 finishes - by a node budget, movetime 1, a fallen flag or a `stop` - which must
+  still answer with a legal move (the TT move when it has one), and `stop` sent straight after `go infinite`, which
+  must never be lost;
 - malformed input, after which the engine must still answer isready.
 
 With --terminal it also runs legalcheck on a pseudo-terminal (POSIX only), resizing it as the gate runs, and holds
@@ -654,6 +657,53 @@ def check_positions_and_go(gate):
     gate.report(len(bestmoves(lines)) == 1, "go", "clock past history", "(half-move clock 40 with no moves given)")
 
 
+# Depth 1 alone is ~968,000 nodes here (rooks and bishops all en prise, so quiescence runs long), so any budget short
+# of that, or a `stop` soon after `go`, cuts the first iteration short; and 1,928 on the pawn wall, past the
+# 1024-node interval the node budget is checked at.
+SLOW_DEPTH_ONE_FEN = "k7/8/2rrrr2/2RRRR2/2bbbb2/2BBBB2/8/K7 w - - 0 1"
+PAWN_WALL_FEN = "rnbqkbnr/8/8/pppppppp/PPPPPPPP/8/8/RNBQKBNR w - - 0 1"
+
+
+def check_stop_before_depth_one(gate):
+    """A search cut short before depth 1 finishes still plays a legal move: the best root move whose search completed,
+    else the root's TT move, else the first legal move. It once answered bestmove 0000, which a host takes as an
+    illegal move or a forfeit."""
+    _, slow_moves, _ = gate.run("moves", SLOW_DEPTH_ONE_FEN)
+    _, wall_moves, _ = gate.run("moves", PAWN_WALL_FEN)
+    lines = gate.session(["setoption name Threads value 1", f"position fen {PAWN_WALL_FEN}", go("go nodes 1"),
+                          f"position fen {SLOW_DEPTH_ONE_FEN}", go("go movetime 1"), go("go wtime 0 btime 0"),
+                          "go infinite", 0.05, ("stop", r"^bestmove ")])
+    answers = bestmoves(lines)
+    is_legal = len(answers) == 4 and answers[0] in wall_moves.split() and all(
+        answer in slow_moves.split() for answer in answers[1:])
+    gate.report(is_legal, "go", "stopped in depth 1", f"(nodes 1, movetime 1, a fallen flag, stop at 50 ms: "
+                f"{' '.join(answers)}; each legal, never 0000)")
+
+    # With a root TT entry and no root move finished, the TT move is played: `stop` lands microseconds into a depth 1
+    # whose first move alone takes far longer, so the move must be the one the depth-1 search before it stored.
+    lines = gate.session(["setoption name Threads value 1", "ucinewgame", f"position fen {SLOW_DEPTH_ONE_FEN}",
+                          go("go depth 1"), "go infinite", ("stop", r"^bestmove ")])
+    answers = bestmoves(lines)
+    gate.report(len(answers) == 2 and answers[0] in slow_moves.split() and answers[0] == answers[1], "go",
+                "stopped: TT move", f"(go depth 1 then go infinite + stop at once: {' '.join(answers)}, the same move)")
+
+
+def check_stop_straight_after_go(gate):
+    """`stop` sent straight after `go infinite` must end the search - Amphitheater's analysis does exactly this. The
+    coordinator thread once cleared the stop flag as it started, after the UCI thread had already set it, so the stop
+    was lost and `go infinite` searched for ever; it was lost on every one of 25 tries of 25 on 2026-11-07."""
+    rounds = 200
+    _, start_moves, _ = gate.run("moves", START_FEN)
+    steps = ["setoption name Threads value 2", "position startpos"]
+    for _ in range(rounds):
+        steps += ["go infinite", ("stop", r"^bestmove ")]
+    lines = gate.session(steps + [("isready", r"^readyok$")])
+    answers = bestmoves(lines)
+    gate.report(len(answers) == rounds and all(answer in start_moves.split() for answer in answers) and
+                "readyok" in lines, "go", f"{len(answers)}/{rounds} stops",
+                "(go infinite then stop at once, Threads 2: every stop ends the search with a legal move)")
+
+
 def check_unsupported_castling_rights(gate):
     """A castling field can claim a right the board cannot support, and the parse must drop it.
 
@@ -794,6 +844,8 @@ def main():
         check_evalfile_refusal_is_loud(gate, nnue_paths)
         check_books(gate, scratch)
         check_positions_and_go(gate)
+        check_stop_before_depth_one(gate)
+        check_stop_straight_after_go(gate)
         check_unsupported_castling_rights(gate)
         check_malformed(gate)
         if is_terminal:

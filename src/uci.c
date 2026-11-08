@@ -348,7 +348,7 @@ static int go_thread_main(void *raw)
         pool[thread_index].hist_count    = args->hist_count;
         pool[thread_index].move_overhead = session->move_overhead;
     }
-    atomic_store_explicit(&session->engine->search.is_stop_requested, false, memory_order_relaxed);
+    // No clear of the stop here: go() cleared it before this thread existed, and a `stop` read since must stand.
     platform_thread_t helpers[256];
     HelperArgs        helper_args[256];
     for (int thread_index = 1; thread_index < active_threads; thread_index++)
@@ -477,6 +477,10 @@ static void go(UciSession *session, char **save_ptr)
     args->limits  = limits;
     memcpy(args->hist, session->game_hist, session->game_hist_count * sizeof(uint64_t));
     args->hist_count = session->game_hist_count;
+    // Clear the stop once, here on the UCI thread and before the coordinator exists. This thread is the one that
+    // reads `stop`, so a `stop` sent straight after this `go` is stored after the clear and stands; a clear on the
+    // coordinator (there were two) could land after it and lose it, leaving `go infinite` searching for ever.
+    atomic_store_explicit(&session->engine->search.is_stop_requested, false, memory_order_relaxed);
     if (platform_thread_create(&session->search_thread, go_thread_main, args) == 0)
     {
         session->is_search_thread_running = true;
@@ -1034,7 +1038,9 @@ int run_bench(Engine *engine, int depth)
         searcher->move_overhead = 0;
         SearchLimits limits;
         search_limits_init(&limits);
-        limits.depth           = depth;
+        limits.depth = depth;
+        // searcher_go never clears the stop flag; whoever starts a search does.
+        atomic_store_explicit(&engine->search.is_stop_requested, false, memory_order_relaxed);
         const int64_t start_ms = platform_now_ms();
         searcher_go(searcher, pos, &limits, true);
         const double   secs  = (platform_now_ms() - start_ms) / 1000.0;

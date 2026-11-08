@@ -231,7 +231,9 @@ int run_datagen(Engine *engine, const int argc, char **argv)
 
             memcpy(searcher->hist_keys, history, history_count * sizeof(uint64_t));
             searcher->hist_count = history_count;
-            const Move move      = searcher_go(searcher, pos, &limits, true);
+            // searcher_go never clears the stop flag; whoever starts a search does.
+            atomic_store_explicit(&engine->search.is_stop_requested, false, memory_order_relaxed);
+            const Move move = searcher_go(searcher, pos, &limits, true);
             if (move_is_none(move))
             {
                 game_result = 0;
