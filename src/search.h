@@ -62,7 +62,8 @@ typedef struct Searcher
     int      selective_depth; ///< greatest ply reached (selective depth)
     int64_t  move_overhead;   ///< ms subtracted from the clock to cover I/O latency
     bool     is_silent;       ///< suppress UCI info lines (datagen / bench batches)
-    int      root_score;      ///< score (cp, root stm POV) of the last completed iteration — for datagen labels
+    int      root_score;      ///< score (cp, root stm POV) of the last completed iteration — for datagen labels;
+                              ///< VALUE_NONE when the search was stopped before depth 1 finished
 
     /// Repetition/50-move context: keys of positions played before the root (from UCI), extended in-tree.
     uint64_t hist_keys[SEARCH_HIST_CAP]; ///< pre-root + in-tree position keys
@@ -81,7 +82,7 @@ typedef struct Searcher
     int  cont_hist[768 * 768];         ///< [prev (piece,to)][cur (piece,to)] 1-ply continuation history
     Move pv_table[MAX_PLY][MAX_PLY];   ///< triangular principal-variation table
     int  pv_len[MAX_PLY];              ///< PV length per ply
-    Move root_best;                    ///< best move at the root of the current search
+    Move root_best;                    ///< best root move (if cut short: the best of the root moves completed)
 
     /// This thread's NNUE refresh cache; searcher_go binds it into the root position, and copy-make hands
     /// it down to every node this thread searches. Zeroed by searcher_init (entries then miss on first use).
@@ -113,7 +114,11 @@ static inline void searcher_hist_pop(Searcher *searcher)
 }
 
 /**
- * @brief Search @p root and return the best move.
+ * @brief Search @p root and return the best move — a legal one whenever the root has one, even when the search is
+ *        stopped before depth 1 finishes (then a move whose search completed, else the TT move, else the first).
+ *
+ * It never clears the engine's stop flag: the caller clears it before the search starts (the UCI front end does
+ * so on its own thread before it starts the coordinator), so a stop requested before this runs still stands.
  * @param searcher this thread's search state.
  * @param root the root position to search (taken by value).
  * @param lim the stopping conditions for this search.

@@ -826,6 +826,12 @@ static int negamax(Searcher *searcher, const Position *pos, int depth, int alpha
         searcher_hist_pop(searcher);
         if (atomic_load_explicit(&searcher->engine->search.is_stop_requested, memory_order_relaxed))
         {
+            if (is_root)
+            {
+                // The best of the root moves whose searches completed before this one was cut short (none if
+                // this was the first): what searcher_go plays when the stop lands before depth 1 is done.
+                searcher->root_best = best_move;
+            }
             return 0; // aborted mid-move: the partial score is garbage; iterative deepening keeps the last full result
         }
 
@@ -931,14 +937,42 @@ static int negamax(Searcher *searcher, const Position *pos, int depth, int alpha
     return best_score;
 }
 
+/**
+ * @brief The move to play when the search stopped before depth 1 finished, so that the engine never answers
+ *        `0000` while the root has a legal move.
+ *
+ * In order: the best root move whose search completed in the cut-short iteration (negamax leaves it in
+ * root_best when it aborts at the root), else the root's TT move if it is legal here (a key collision can
+ * store anything), else the first legal move. Runs only on a stopped search, so it cannot move a node count.
+ * @return the move, or MOVE_NONE only when the root has no legal move (mate or stalemate).
+ */
+static Move move_for_unfinished_search(const Searcher *searcher, const Position *root)
+{
+    if (!move_is_none(searcher->root_best))
+    {
+        return searcher->root_best;
+    }
+    Move      legal[MAX_MOVES];
+    const int count    = generate_legal(root, legal, false);
+    TTData    tt_entry = {0};
+    if (tt_probe(&searcher->engine->tt, root->key, &tt_entry))
+    {
+        for (int index = 0; index < count; index++)
+        {
+            if (legal[index] == (Move)tt_entry.move)
+            {
+                return legal[index];
+            }
+        }
+    }
+    return count > 0 ? legal[0] : MOVE_NONE;
+}
+
 Move searcher_go(Searcher *searcher, Position root, const SearchLimits *lim, const bool is_main_thread)
 {
-    searcher->is_main = is_main_thread;
-    if (searcher->is_main)
-    {
-        atomic_store_explicit(&searcher->engine->search.is_stop_requested, false, memory_order_relaxed);
-        // ^ clear the shared stop before a new search (helpers are launched after this)
-    }
+    // The shared stop is NOT cleared here: the caller clears it before the search starts (for UCI, on the UCI
+    // thread before the coordinator exists), so a `stop` that arrives before this thread runs still stands.
+    searcher->is_main         = is_main_thread;
     searcher->nodes           = 0;
     searcher->selective_depth = 0;
     memset(searcher->killers, 0, sizeof(searcher->killers));
@@ -996,8 +1030,19 @@ Move searcher_go(Searcher *searcher, Position root, const SearchLimits *lim, con
                 break;
             }
         }
-        if (atomic_load_explicit(&searcher->engine->search.is_stop_requested, memory_order_relaxed) &&
-            best != MOVE_NONE)
+        const bool is_stopped = atomic_load_explicit(&searcher->engine->search.is_stop_requested, memory_order_relaxed);
+        if (is_stopped && move_is_none(best))
+        {
+            // Stopped before depth 1 finished (a `stop`, or a budget too small for it): answer with a legal move
+            // all the same, and with no score, since no iteration finished. A root with no legal move gets none
+            // and goes on below as it always has.
+            best = move_for_unfinished_search(searcher, &root);
+            if (!move_is_none(best))
+            {
+                score = VALUE_NONE;
+            }
+        }
+        if (is_stopped && !move_is_none(best))
         {
             break;
         }
