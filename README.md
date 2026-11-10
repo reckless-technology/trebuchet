@@ -93,6 +93,9 @@ stop                                  # if a search is still running
 quit
 ```
 
+A `stop` always gets a `bestmove`: one sent before the first depth has finished is answered with a legal move (never `0000`), and one sent
+straight after `go` is not lost. Every output line is written in a single call, so `readyok` cannot land inside an `info` line.
+
 `go perft <depth>` counts the moves below the current position instead of searching it, one line per root move
 and then the total: `go perft 3` from the start position reports 8902.
 
@@ -105,7 +108,7 @@ setoption name Hash value 256
 | Option | Default | What it is |
 |---|---|---|
 | `Hash` | 64 | The transposition table, in MB, 1 to 65536. More helps a long search and a slow time control most. |
-| `Threads` | as many as the machine reports | Search threads, 1 to 256. The table is shared and everything else is per thread. **A score is only reproducible at `Threads 1`**: above that the threads race through the shared table, so the same search can return a different score each time. |
+| `Threads` | half the logical CPUs (at least 1) | Search threads, 1 to 256. The default gives each thread a real core on SMT machines. The table is shared and everything else is per thread. **A score is only reproducible at `Threads 1`**: above that the threads race through the shared table, so the same search can return a different score each time. |
 | `Move Overhead` | 20 | Milliseconds held back from every move, for the time a host and the pipe between you take. Raise it if Trebuchet loses on time over a network. |
 | `Clear Hash` | - | Empties the table. A host sends `ucinewgame` between games, which does the same thing. |
 | `EvalFile` | `<embedded>` | A network file to use instead of the embedded one. It passes the same container checks, and the same net loaded this way searches exactly as the embedded one does. |
@@ -139,8 +142,8 @@ changed how it searches. The verification commands that go with it are in [Verif
 
 Every correctness property has an executable gate. `make check` runs them all; CI runs the same gates on
 Linux and Windows on every push (asserting the bench signature on each), plus a threaded UCI smoke and the
-NNUE gates against a synthetic net, and holds their line coverage of `src/` to 90 % on Linux (below); macOS runs
-the full suite on release candidates. Any failure aborts non-zero.
+NNUE gates against a synthetic net, and holds their line coverage of `src/` to 90 % on Linux (below); macOS is built and tested by the release
+workflow and by the manual `macos-check` workflow, not on every push. Any failure aborts non-zero.
 
 ```bash
 make check                          # build + run every gate below
@@ -183,8 +186,8 @@ gate still holds its node signature: instrumentation counts and changes nothing 
 with its profile runtime and `llvm-profdata` / `llvm-cov`: Xcode's through `xcrun` on macOS, MSYS2 CLANG64's
 `llvm-tools` on Windows (`tools/setup-dev.ps1` installs them), and on Linux `llvm-profdata` on the PATH or, failing
 that, the copy versioned like clang (`llvm-profdata-18` beside clang 18; `LLVM_SUFFIX=-18`, or `LLVM_PROFDATA=` and
-`LLVM_COV=`, name them). The gates reach 94.6 % of `src/`'s lines on Linux, 94.3 % on macOS and 94.0 % on
-Windows; each platform compiles its own branches of `platform.h`, and a tenth of a point moves with timing (a search
+`LLVM_COV=`, name them). The gates reached 95.25 % of `src/`'s lines in CI's Linux `coverage` job at `7d55bbb` (Trebuchet 1.1.0, 2026-11-08); the
+macOS and Windows figures were last measured at 94.3 % and 94.0 %, before 1.1.0, and have not been re-measured. Each platform compiles its own branches of `platform.h`, and a tenth of a point moves with timing (a search
 stopped inside quiescence or not). What they leave is code no gate can reach without breaking the engine:
 allocation failures (the engine, the net, the book, the search pool, a thread that will not start), the failure
 branches of the gates themselves (a mismatch report), a `Hash` above the 65536 MB cap (whose test would ask a shared
@@ -205,7 +208,7 @@ The version is `MAJOR.MINOR.BUILD`, from git alone, the rule all of reckless-tec
 - `BUILD` is the number of commits since that tag, the tagged commit itself being 0.
 
 `tools/version.sh` works it out (`git describe --tags --match 'v*.*' --exclude 'v*.*.*'`). The `Makefile` compiles it in
-as `TREBUCHET_VERSION_STRING`, and rebuilds when it changes. The engine reports it: `id name Trebuchet 1.0.0`, and in the
+as `TREBUCHET_VERSION_STRING`, and rebuilds when it changes. The engine reports it: `id name Trebuchet 1.1.0`, and in the
 banner. Nothing in the tree holds a version to edit, so no version-bump commit follows a release. A tree with no mark
 reachable (a source tarball, a shallow clone, a fork without the tags) builds as `0.0.0`. The marks up to `v3.0`, from
 before the rename, stay reachable from every later commit: `git describe` takes the nearest mark by commits and not
@@ -235,7 +238,7 @@ Each archive holds the engine, `README.md`, `LICENSE` and `THIRD-PARTY-NOTICES.m
 essentially any modern x86-64;
 `x86-64-v3-pext` needs AVX2 and BMI2 (Intel Haswell+, AMD Zen 3+) and is the one to run where it can: the NNUE's
 SIMD is AVX2, so the `x86-64-v2` engine evaluates in scalar code and searches about a third slower (bench 1.30 against
-1.95 Mnps on one P-core of an i9-13900HX). A bare macOS binary can't carry a stapled
+1.95 Mnps on one P-core of an i9-13900HX, Windows 11, measured October 2026). A bare macOS binary can't carry a stapled
 notarisation ticket, so Gatekeeper looks its ticket up online. The signing runs from `tools/sign-macos.sh` and
 `tools/sign-windows.ps1`, with the organisation's signing secrets (the same ones as its other apps). The Windows engines
 are signed only in a run that publishes, since every signing spends the eSigner account's allowance. A publishing run
@@ -267,6 +270,9 @@ PRNG — before any thread exists.
 `src/tt.*`         | lockless transposition table ({key^data, data} slots, bit-field payload)
 `src/search.*`     | iterative deepening, PVS, quiescence, the pruning/reduction/extension stack, Lazy SMP
 `src/uci.*`        | the UCI protocol loop, time manager, and CLI self-test subcommands
+`src/accumulator.h` | the NNUE hidden-layer accumulator embedded in `Position`
+`src/crc64.h`      | CRC-64/XZ, the `RNNUE1` container's integrity check
+`src/testfmt.h`    | shared output format of the CLI self-test gates
 `src/version.h`    | the version string, MAJOR.MINOR.BUILD from the git tags (`tools/version.sh`, stamped by the Makefile)
 `src/main.c`       | entry + CLI dispatch
 `datagen/*`        | standalone training-data tools (`make datagen`): self-play generation + a bulletformat-to-text converter
@@ -298,7 +304,7 @@ masks and emits pseudo-legal moves into a caller-provided `Move[MAX_MOVES]` buff
 `make_move`, so illegal and pruned moves never cost a copy. `generate_legal` instantiates the same skeleton
 with real check-evasion and pin-ray masks baked into the target sets (per-destination king safety; a full
 test only for en passant), producing fully legal moves in a single pass with no filter — this backs perft
-(~550 Mnps), datagen, and UCI move parsing. The oracles (`position_is_move_legal`, `pinned_to_king`,
+(about 470-530 Mnps on an i9-13900HX, MSYS2 CLANG64 clang, Windows 11, 2026-11-09), datagen, and UCI move parsing. The oracles (`position_is_move_legal`, `pinned_to_king`,
 `gives_check_fast`, `discovered_check_candidates`) are differentially validated against the copy-make
 ground truth (`position_is_move_legal_slow`) by the `legalcheck` gate.
 
@@ -390,9 +396,9 @@ tools here import it and must run on a CI runner with no network: change it in b
 make datagen         # -> ./build/trebuchet-datagen + ./build/trebuchet-bullet2text
 ./build/trebuchet-bullet2text <shard.data> data/bullet/shard.txt 0 4   # bulletformat -> text
 tools/datagen_parallel.sh 20000 data/run1 32 5000 8                    # or Trebuchet's own self-play
-./build/trebuchet nnuecheck nets/trebuchet.nnue                        # incremental == full refresh
+./build/trebuchet nnuecheck nets/reckless-lc0-runf-sb870.nnue           # incremental == full refresh
 # the 0-cp contract gate, run from a nnue-training clone:
-python3 pytorch/verify.py --net nets/trebuchet.nnue --fens <fens> --engine /path/to/trebuchet/build/trebuchet
+python3 pytorch/verify.py --net nets/reckless-lc0-runf-sb870.nnue --fens <fens> --engine /path/to/trebuchet/build/trebuchet
 ```
 
 `./build/trebuchet-datagen` generates the engine's own self-play data (`fen;stm_score;wdl` records) across all

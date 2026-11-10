@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This engine was called Zenith until 2026-11-06: see the note at the top of [README.md](README.md).
 
-Trebuchet is a from-scratch UCI chess engine in **C17** (~5,300 lines, `src/*.{h,c}`; ported from the original
+Trebuchet is a from-scratch UCI chess engine in **C17** (~7,800 lines, `src/*.{h,c}`, counted 2026-11-09; ported from the original
 C++20, preserved at git tag `cpp-final`). It is feature-complete: king-bucketed NNUE, Lazy SMP, an
 SPSA-tuned search, and a Polyglot opening book — and it led its reference engine (pawnstar) at every
 configuration tested in July 2026. Measured since, single-thread only: Trebuchet 1.0.0 is **+144.30 Elo** over
@@ -163,7 +163,7 @@ after; kept file-scope because they sit on the hottest loads (see `bitboard.h`).
   (permissive masks — plain pseudo-legal emission into a caller-provided `Move[MAX_MOVES]` buffer,
   `MOVE_NONE`-terminated, returning the count) and `generate_legal` (real check-evasion + pin-ray masks baked
   into the target sets, per-destination king safety, full test only for en passant — no per-move filter pass;
-  ~550 Mnps perft, at parity with pawnstar). The search uses `generate_pseudo` and filters with
+  about 470-530 Mnps perft on an i9-13900HX, MSYS2 CLANG64 clang, Windows 11, 2026-11-09). The search uses `generate_pseudo` and filters with
   `position_is_move_legal` *before* pruning/make (the +66 Elo prune-before-make change); `generate_legal` serves
   perft/datagen/UCI parsing. `noisy_only` = captures+promotions.
 - **eval.\*** — `evaluate(pos, cache)` returns centipawns from side-to-move POV (memoised in the engine's
@@ -212,7 +212,7 @@ after; kept file-scope because they sit on the hottest loads (see `bitboard.h`).
   re-tune with `tools/spsa.py`). `static_exchange_eval()` is the local SEE.
 - **uci.\*** — protocol loop + the CLI subcommands (`bench`/`perft`/`legalcheck`/`bookcheck`/`embookcheck`/
   `nnueeval`/`nnuecheck`). Search runs on a coordinator thread (`platform.h` shim); `stop`
-  sets the shared atomic `g_stop`. Options: `Hash`, `Clear Hash`, `Threads` (Lazy SMP, 1–256; default = half the logical CPUs, so each thread gets a real core on SMT machines),
+  sets the shared atomic `search.is_stop_requested`. Options: `Hash`, `Clear Hash`, `Threads` (Lazy SMP, 1–256; default = half the logical CPUs, so each thread gets a real core on SMT machines),
   `Move Overhead`, `EvalFile`, `OwnBook`/`BookFile` (Polyglot; OwnBook defaults false — testing stays
   bookless), plus the SPSA-tunable search parameters. Prints a version banner (`src/version.h`:
   MAJOR.MINOR.BUILD from the git tags, stamped by the Makefile).
