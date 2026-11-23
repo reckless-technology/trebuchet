@@ -37,7 +37,7 @@ make clean
 make check             # run EVERY gate below (perft, bench-signature, legalcheck, seecheck, fuzzcheck,
                        #   bookcheck, embookcheck, the UCI front end, nnuecheck) — mirrors CI; any failure aborts
 make coverage          # LLVM source-based line coverage of src/ by those gates (+ CI's threaded UCI smoke), FAILING
-                       #   under COVERAGE_MIN (90; CI's `coverage` job, Linux): instrumented engine in build/cov/,
+                       #   under COVERAGE_MIN (95; CI's `coverage` job, Linux): instrumented engine in build/cov/,
                        #   report on stdout, build/cov/lcov.info + html/; src/ only — datagen/ and tools/ are
                        #   developer tools no release ships and are not measured; needs llvm-profdata/llvm-cov
                        #   (xcrun on macOS, MSYS2 llvm-tools, Linux: on PATH or clang's version, LLVM_SUFFIX=-18)

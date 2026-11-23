@@ -174,7 +174,7 @@ COV_DIR    = $(BUILD_DIR)/cov
 COV_BIN    = $(COV_DIR)/trebuchet
 COV_FLAGS  = $(STD) -O2 -g $(ARCH_FLAG) -DNDEBUG -fprofile-instr-generate -fcoverage-mapping $(WARN) $(VERSION)
 COV_DATA   = $(COV_DIR)/trebuchet.profdata
-COVERAGE_MIN ?= 90
+COVERAGE_MIN ?= 95
 # llvm-cov is a native program on Windows: it needs the .exe the linker added, where MSYS2's make and bash find
 # build/cov/trebuchet without it.
 EXE        = $(if $(filter Windows_NT,$(OS)),.exe)
