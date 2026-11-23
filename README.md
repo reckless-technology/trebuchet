@@ -48,7 +48,7 @@ make pext            # -> ./build/trebuchet-pext   (BMI2 PEXT sliding attacks; b
 make datagen         # -> ./build/trebuchet-datagen + ./build/trebuchet-bullet2text (standalone NNUE training-data tools)
 make datagen-debug   # -> ASan+UBSan builds of both datagen tools (they live outside src/, so `make debug` skips them)
 make check           # build + run every correctness gate (mirrors CI; see Verify below)
-make coverage        # line coverage of src/ by those gates, failing under 90 % (LLVM source-based; see Verify below)
+make coverage        # line coverage of src/ by those gates, failing under 95 % (LLVM source-based; see Verify below)
 make perft           # build + run the perft movegen gate
 make bench           # build + run the fixed-depth node-signature benchmark
 make baseline        # snapshot the current ./build/trebuchet -> ./build/trebuchet-base (the SPRT reference binary)
@@ -142,7 +142,7 @@ changed how it searches. The verification commands that go with it are in [Verif
 
 Every correctness property has an executable gate. `make check` runs them all; CI runs the same gates on
 Linux and Windows on every push (asserting the bench signature on each), plus a threaded UCI smoke and the
-NNUE gates against a synthetic net, and holds their line coverage of `src/` to 90 % on Linux (below); macOS is built and tested by the release
+NNUE gates against a synthetic net, and holds their line coverage of `src/` to 95 % on Linux (below); macOS is built and tested by the release
 workflow and by the manual `macos-check` workflow, not on every push. Any failure aborts non-zero.
 
 ```bash
@@ -173,7 +173,7 @@ malformed input. It needs only Python 3, which the build already does.
 `main` is protected: changes land via pull request with all CI checks green.
 
 **Coverage.** `make coverage` measures how much of `src/` those gates reach, with LLVM's source-based coverage, and
-fails under `COVERAGE_MIN` per cent of its lines (90 by default; CI's `coverage` job runs it on Linux). It builds an
+fails under `COVERAGE_MIN` per cent of its lines (95 by default; CI's `coverage` job runs it on Linux). It builds an
 instrumented engine (`-fprofile-instr-generate -fcoverage-mapping`, `-O2 -g`, the same sources and embedded net and
 book) into `build/cov/`, runs every `make check` gate against it - nnuecheck included, and the front-end gate with
 `--terminal`, which on Linux and macOS also runs legalcheck on a pseudo-terminal to test its in-place progress line -
