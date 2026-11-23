@@ -12,7 +12,7 @@ metadata:
 4,000 games, +1787 =1998 -215, 69.65%, 95% +134.35 to +154.49 allowing for opening correlation (ICC 0.157,
 design effect 1.947; nominal +137.15 to +151.58). lin-0 (Ryzen 7 6800H, 8 physical cores), fastchess 1.8.2
 alpha, published release binaries frozen and re-hashed, no CI job alongside, 8+0.08, concurrency 7, paired
-colours, 306 lines (298 distinct positions) from the TSCP-derived set, draw movenumber=40 movecount=8 score=20,
+colours, 306 lines (298 distinct positions) from the TSCP-derived set (`openings-stripped.epd`, SHA-256 `4ece22f7...`, the comment-stripped Pawnstar set the runF campaign used, before Pawnstar's present 6,433-position set), draw movenumber=40 movecount=8 score=20,
 resign movecount=3 score=600, Threads=1, Hash=64, own book off, game count fixed in advance. Evidence:
 `~/sprt/trebuchet-1.0-strength/` on lin-0; its STATUS.md leaves one thing open, 67 unforced Pawnstar moves with
 no info line, cause not established. Both sides played one net, SHA-256 `c8a29b328849cd1e...`: `pawnstar-v20.bin`
@@ -29,7 +29,9 @@ no info line, cause not established. Both sides played one net, SHA-256 `c8a29b3
 - **The "~+135" in older notes was `cap1`, not `cap2`:** it first appears on 2026-07-30 (`65c7e9f`, 800 games per
   book setup, +/-17) with the Makefile's `NET` at `cap1`, and `cap2` shipped on 2026-08-01. No game logs found.
 
-Trebuchet's strength is benchmarked against pawnstar C++ (the reference opponent; user wants Trebuchet stronger). Gaps measured with fastchess, tc=8+0.08, PlentyChess openings.
+Trebuchet's strength is benchmarked against pawnstar C++ (the reference opponent; user wants Trebuchet stronger). Gaps measured with fastchess, tc=8+0.08, PlentyChess openings (this note's own account of the July
+matches; the set was the 174MB `~/pawnstar_nnue/openings.epd`, no longer on lin-0 and not versioned, so its hash is not
+known). The 2026-11-07 match above used the 306-position set, SHA-256 `4ece22f7...`, as the run's own PRECOMMIT.md records.
 
 **GOAL FULLY ACHIEVED (2026-07-23): Trebuchet beats pawnstar at BOTH single thread (+77.7 ± 25.2) and 8 threads
 (+107.5 ± 37.8).**
