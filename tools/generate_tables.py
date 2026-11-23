@@ -6,7 +6,7 @@
 Emits:
   src/generated/zobrist_tables.inc — the Zobrist keys, drawn from the xorshift64* PRNG in the engine's historical
                            order (seed 0x9E3779B97F4A7C15). The draw ORDER is part of the engine's identity:
-                           any change shifts every position key, the TT behaviour, and the bench signature.
+                           any change shifts every position key, the TT behavior, and the bench signature.
   src/generated/ln_tables.inc      — ln(n) for n = 1..127 in Q28 fixed point (round(ln(n) * 2^28)), for the LMR
                            reduction table: the search then needs no floating point at all, so the bench
                            node signature is reproducible on every platform/compiler by construction.

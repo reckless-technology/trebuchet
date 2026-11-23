@@ -89,7 +89,7 @@ static inline void position_copy_for_make(Position *dst, const Position *src)
 }
 
 /**
- * @brief Initialise @p pos to an empty board bound to @p net: White to move, zeroed keys, both cached king
+ * @brief Initialize @p pos to an empty board bound to @p net: White to move, zeroed keys, both cached king
  * buckets at 0.
  *
  * The zeroed king buckets are crucial so set_fen's incremental add_piece() calls index the net in bounds before

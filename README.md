@@ -11,7 +11,7 @@ The source code was written by Claude Code under the close supervision and direc
 
 Trebuchet pairs a modern alpha-beta search — iterative deepening, principal-variation search, a lockless
 transposition table, the full pruning/reduction stack, and Lazy SMP — with a king-bucketed neural
-network evaluation: the **shared Reckless NNUE**, which every chess engine in the organisation now
+network evaluation: the **shared Reckless NNUE**, which every chess engine in the organization now
 evaluates with, trained on Leela Chess Zero self-play data. The network shape is Trebuchet's own design,
 measured here; the weights it ships come from the shared trainer in
 [`nnue-training`](https://github.com/reckless-technology/nnue-training), and the nets it shipped before
@@ -127,7 +127,7 @@ The same binary answers a few commands as arguments rather than over the protoco
 
 ```sh
 ./build/trebuchet bench [depth]          # fixed-depth search: the node signature, and nps. No depth = the pinned one
-./build/trebuchet license                # the licence and the third-party notices
+./build/trebuchet license                # the license and the third-party notices
 ./build/trebuchet moves "<fen>"          # every legal move, in UCI notation
 ./build/trebuchet san "<fen>" <uci...>   # those moves written in SAN
 ./build/trebuchet applymoves "<fen>" [uci...]   # the FEN they lead to
@@ -148,7 +148,7 @@ workflow and by the manual `macos-check` workflow, not on every push. Any failur
 ```bash
 make check                          # build + run every gate below
 ./build/trebuchet perft                # movegen vs known counts: canonical + ep/castling/promotion catchers + Ethereal 128
-./build/trebuchet bench 13             # deterministic fixed-depth node signature (guards search behaviour) + nps
+./build/trebuchet bench 13             # deterministic fixed-depth node signature (guards search behavior) + nps
 ./build/trebuchet legalcheck           # the copy-free legality/check predicates == copy-make ground truth over a perft walk
 ./build/trebuchet seecheck             # static exchange evaluation vs hand-verified capture positions
 ./build/trebuchet fuzzcheck            # malformed-FEN/UCI hardening (memory safety; run the `make debug` build under ASan)
@@ -165,7 +165,7 @@ the same net from `EvalFile` searches exactly as the embedded one), the `positio
 flag, nodes, movetime, perft, infinite and stop, a mate, a mated position, a history past its cap), crafted Polyglot
 books (castling entries, and the books the loader must refuse), the notation subcommands against hand-verified
 answers (`moves`, `polykey` against the specification's vectors, every SAN form, `applymoves`), `nnueeval` with the
-net's colour symmetry, every verdict the `RNNUE1` loader can reach (a bad magic, a retired container, a corrupt
+net's color symmetry, every verdict the `RNNUE1` loader can reach (a bad magic, a retired container, a corrupt
 header, a sound header describing another architecture, a non-zero reserved byte, a truncated, over-long or empty file,
 a corrupt payload), and
 malformed input. It needs only Python 3, which the build already does.
@@ -195,7 +195,7 @@ runner for 64 GB), the Windows console's width on Linux and macOS (and the termi
 helpers nothing calls.
 
 The **`bench` node signature** is the linchpin: a fixed-depth search produces a deterministic node count,
-so any unintended change to search behaviour shows up immediately, and a pure-speed change is proven safe
+so any unintended change to search behavior shows up immediately, and a pure-speed change is proven safe
 by leaving it identical. `tools/sprt.sh` runs a self-play SPRT (via **fastchess**) to decide whether a
 change that *does* alter the signature is actually a strength gain — no strength change lands on intuition.
 
@@ -230,7 +230,7 @@ must report the version. The workflow creates the release
 | File | What it is |
 |---|---|
 | `trebuchet-v<version>-windows-x86-64-v2.zip`, `-windows-x86-64-v3-pext.zip` | `trebuchet.exe` Authenticode-signed through SSL.com eSigner (Jonathan Reckless) |
-| `trebuchet-v<version>-macos-arm64.zip` | the engine for Apple silicon, signed with a Developer ID (hardened runtime) and notarised by Apple |
+| `trebuchet-v<version>-macos-arm64.zip` | the engine for Apple silicon, signed with a Developer ID (hardened runtime) and notarized by Apple |
 | `trebuchet-v<version>-linux-x86-64-v2.tar.gz`, `-linux-x86-64-v3-pext.tar.gz` | the engine for Linux |
 | `trebuchet-v<version>-SHA256SUMS.txt` | the checksums of every archive |
 
@@ -239,8 +239,8 @@ essentially any modern x86-64;
 `x86-64-v3-pext` needs AVX2 and BMI2 (Intel Haswell+, AMD Zen 3+) and is the one to run where it can: the NNUE's
 SIMD is AVX2, so the `x86-64-v2` engine evaluates in scalar code and searches about a third slower (bench 1.30 against
 1.95 Mnps on one P-core of an i9-13900HX, Windows 11, measured October 2026). A bare macOS binary can't carry a stapled
-notarisation ticket, so Gatekeeper looks its ticket up online. The signing runs from `tools/sign-macos.sh` and
-`tools/sign-windows.ps1`, with the organisation's signing secrets (the same ones as its other apps). The Windows engines
+notarization ticket, so Gatekeeper looks its ticket up online. The signing runs from `tools/sign-macos.sh` and
+`tools/sign-windows.ps1`, with the organization's signing secrets (the same ones as its other apps). The Windows engines
 are signed only in a run that publishes, since every signing spends the eSigner account's allowance. A publishing run
 that would ship an unsigned engine fails.
 
@@ -265,7 +265,7 @@ PRNG — before any thread exists.
 `src/movegen.*`    | one masked setwise generator: pseudo-legal + single-pass legal instantiations
 `src/engine.*`     | the Engine aggregate (TT + shared search state + eval cache + NNUE net) + its new/delete
 `src/eval.*`       | evaluate(): the NNUE forward pass (a net is always loaded); shared eval cache
-`src/nnue.*`       | king-bucketed quantised NNUE: loader, feature indexing, AVX2 forward, finny refresh cache
+`src/nnue.*`       | king-bucketed quantized NNUE: loader, feature indexing, AVX2 forward, finny refresh cache
 `src/book.*`       | Polyglot opening book: key computation, probing, weighted move choice
 `src/tt.*`         | lockless transposition table ({key^data, data} slots, bit-field payload)
 `src/search.*`     | iterative deepening, PVS, quiescence, the pruning/reduction/extension stack, Lazy SMP
@@ -322,7 +322,7 @@ perspective — is the one call site the network replaces.
   changes a side's bucket or mirror state triggers a refresh accelerated by a per-thread **finny cache**
   (owned by each `Searcher`, bound into its root position: a per-(perspective, mirror, bucket) cached
   accumulator plus the board it was built from, so a rebuild applies only piece diffs). The
-  integer forward pass is AVX2-vectorised, and a shared lockless **eval cache** memoises results (its
+  integer forward pass is AVX2-vectorized, and a shared lockless **eval cache** memoizes results (its
   biggest win is qsearch stand-pat). The `nnuecheck` gate proves the incremental accumulator is
   bit-identical to a full refresh.
 - **Embedded by default:** the shipped net is generated into a C array at build time (`tools/embed_net.py`
@@ -375,7 +375,7 @@ consumer verifies* — that repository asserts what a net is, and this engine ch
 against its own compiled constants and refuses loudly, with no fallback, on a mismatch. What lives here
 is the loader (`src/nnue.*`), the net tools in `tools/`, and the engine-side gates.
 
-So the pipeline is `datagen` (or an external dataset via `bullet2text`) → the shared trainer → a quantised
+So the pipeline is `datagen` (or an external dataset via `bullet2text`) → the shared trainer → a quantized
 `.nnue` in the `RNNUE1` container (`tools/stamp_net.py`) → the engine loader. The shipped net need not come
 from Trebuchet's own data: any net of the shared shape loads, and **the net shipped since the
 release then numbered 3.0.0, `nets/reckless-lc0-runf-sb870.nnue`, is trained entirely on Leela Chess Zero self-play data**, from
@@ -384,7 +384,7 @@ attribution notice is in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) and pr
 `./build/trebuchet license`. The nets up to `cap2` were trained on **PlentyChess**
 positions — see [Provenance of earlier networks](NNUE_TRAINING.md#provenance-of-earlier-networks).
 
-The single source of truth for the feature indexing and quantisation contract is `nnue-training`'s
+The single source of truth for the feature indexing and quantization contract is `nnue-training`'s
 `pytorch/features.py`, which `src/nnue.c` must reproduce byte-for-byte; its `pytorch/verify.py` enforces a
 **0 cp** difference between the engine's integer eval and the Python reference. One file is deliberately
 copied into this repository — `tools/rnnue1.py`, verbatim `nnue-training/spec/rnnue1.py`, because three
@@ -438,7 +438,7 @@ tables, null-move/LMR/futility pruning, SEE, NNUE, Lazy SMP (see the
 [Chess Programming Wiki](https://www.chessprogramming.org)) — implemented independently.
 
 - **NNUE network:** the shape Trebuchet designed and measured (king-bucketed, horizontally-mirrored
-  768×8→1024→8 SCReLU), now the **shared Reckless NNUE** that every engine in the organisation evaluates with,
+  768×8→1024→8 SCReLU), now the **shared Reckless NNUE** that every engine in the organization evaluates with,
   in the `RNNUE1` container they all read. **The network shipped since the release then numbered 3.0.0
   (`nets/reckless-lc0-runf-sb870.nnue`) is trained entirely on Leela Chess Zero self-play data**, and comes
   from the shared Reckless NNUE training pipeline (`nnue-training`) rather than from any trainer of
@@ -476,7 +476,7 @@ tables, null-move/LMR/futility pruning, SEE, NNUE, Lazy SMP (see the
   bundled.
 - **Every notice in one place:** [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) — the ODbL training-data
   notice, the Ethereal perft reference counts, the Polyglot format specification, and the earlier networks'
-  data. It ships in every release archive beside the engine and the licence.
+  data. It ships in every release archive beside the engine and the license.
 
 ## License
 

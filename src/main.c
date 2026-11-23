@@ -14,7 +14,7 @@ int main(int argc, char **argv)
     Engine *const engine = engine_new(); // the one engine instance; everything else borrows it
     if (engine == NULL)
     {
-        fprintf(stderr, "failed to initialise engine (out of memory)\n");
+        fprintf(stderr, "failed to initialize engine (out of memory)\n");
         return 1;
     }
     const int status = uci_run(engine, argc, argv);

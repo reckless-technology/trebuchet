@@ -85,7 +85,7 @@ nearest annotated `vMAJOR.MINOR` tag and the commits since it (`tools/version.sh
 commits and not the highest number, so `v1.0` and the marks after it decide the version. Pushing a mark (`v1.1`)
 runs `.github/workflows/release.yml`: built and gated on Linux, Windows and Apple silicon, the Windows engines
 eSigner-signed (publishing runs only - each signing spends the allowance), the macOS one Developer ID-signed and
-notarised, published as `v1.1.0`. `gh workflow run release.yml --ref <branch> -f dry_run=true` proves a change to it
+notarized, published as `v1.1.0`. `gh workflow run release.yml --ref <branch> -f dry_run=true` proves a change to it
 without publishing or spending a Windows signing.
 
 A versioned pre-commit hook (`.githooks/pre-commit`, enabled via `make hooks`) rejects commits whose staged
@@ -93,7 +93,7 @@ A versioned pre-commit hook (`.githooks/pre-commit`, enabled via `make hooks`) r
 
 **Use clang-format 22.1.8.** `make format` runs whatever `clang-format` is first on your PATH, and the
 major version matters: a different one restyles code that is already correct, and then the hook refuses
-files that were fine. The organisation standardised on 22.1.8 on 2026-09-26 (Trebuchet's tree measured clean
+files that were fine. The organization standardized on 22.1.8 on 2026-09-26 (Trebuchet's tree measured clean
 under it, so no reformat was needed here; apt's `clang-format-18` is *not* it, and on Linux `~/.local/bin`
 must precede `/usr/bin` for the right one to win). See `reckless-technology/claude-skills`, skill
 `reckless-working-practice`.
@@ -193,7 +193,7 @@ after; kept file-scope because they sit on the hottest loads (see `bitboard.h`).
   about 470-530 Mnps perft on an i9-13900HX, MSYS2 CLANG64 clang, Windows 11, 2026-11-09). The search uses `generate_pseudo` and filters with
   `position_is_move_legal` *before* pruning/make (the +66 Elo prune-before-make change); `generate_legal` serves
   perft/datagen/UCI parsing. `noisy_only` = captures+promotions.
-- **eval.\*** — `evaluate(pos, cache)` returns centipawns from side-to-move POV (memoised in the engine's
+- **eval.\*** — `evaluate(pos, cache)` returns centipawns from side-to-move POV (memoized in the engine's
   shared lockless `EvalCache`; NULL = uncached). Always the NNUE forward: every `Engine` holds a net — the
   **build-time-embedded** one (tools/embed_net.py -> build/embedded_net.o, from `NET` in the Makefile) by
   default, replaced by UCI `EvalFile` — a net that fails any of the container's checks is **refused** and the
@@ -204,7 +204,7 @@ after; kept file-scope because they sit on the hottest loads (see `bitboard.h`).
   line it is handed back (`NnueRefusal`). Startup prints nothing new. The hand-crafted
   PeSTO fallback was removed with the embedded default; git history keeps it. This single call site is the
   NNUE seam.
-- **nnue.\*** — quantised **king-bucketed** (768×8 → 1024 → 8 output heads) SCReLU perspective net: the
+- **nnue.\*** — quantized **king-bucketed** (768×8 → 1024 → 8 output heads) SCReLU perspective net: the
   loader for the **shared `RNNUE1` container** every Reckless engine reads (skill `reckless-nnue`;
   `src/crc64.h` is its CRC-64/XZ), feature indexing, and the integer forward. The 64-byte header is checked
   field by field against this build's compile-time constants and the king-bucket map by digest, then the
@@ -267,7 +267,7 @@ is found and played. `tools/uci_check.py` holds it ("mate on the 100th ply").
 ## NNUE training pipeline (the trainer is shared; the loader and its gates are Trebuchet's)
 
 `datagen` (C) → the shared trainer in **[`nnue-training`](https://github.com/reckless-technology/nnue-training)**
-→ quantised `.nnue` → `src/nnue.c` (engine). `data/` and `nets/` are gitignored.
+→ quantized `.nnue` → `src/nnue.c` (engine). `data/` and `nets/` are gitignored.
 
 **`nnue-training` is the single source for the NNUE** — the architecture, the king-bucket map, the
 `RNNUE1` container, both trainers (bullet and PyTorch) and the data pipeline. Trebuchet is a consumer of it.
@@ -295,7 +295,7 @@ shared with every other Reckless chess engine (Jonny, 2026-10-27; skill `reckles
 architecture change here is a change owed to all of them — see
 `.claude/memory/trebuchet-goal-independence.md` for what that supersedes and why.
 
-- **The contract is `nnue-training`'s `pytorch/features.py`** — feature indexing + quantisation (QA=255,
+- **The contract is `nnue-training`'s `pytorch/features.py`** — feature indexing + quantization (QA=255,
   QB=64, scale=400, king-bucketed 768×8→1024→8 output heads, horizontal king mirroring, SCReLU).
   `src/nnue.c` must reproduce `feature_index`, `king_bucket`, `king_mirror`, `output_bucket`, and
   `integer_eval` **byte-for-byte**; how a net is trained is that repository's document, not this one.

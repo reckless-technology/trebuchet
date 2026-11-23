@@ -37,7 +37,7 @@ typedef struct Record
     Color stm;      ///< side to move (fixes the WDL POV)
 } Record;
 
-// The same xorshift64* PRNG the magic-bitboard generator uses, for opening/move randomisation. Datagen's
+// The same xorshift64* PRNG the magic-bitboard generator uses, for opening/move randomization. Datagen's
 // move choices are not covered by any gate (only the data format and game logic matter), so a fast,
 // self-contained generator is all that is needed here.
 typedef struct DatagenRng

@@ -1,11 +1,11 @@
 name: Match
 
 # A strength match between two Trebuchet builds, played on GitHub-hosted runners instead of by hand on lin-0 (the
-# organisation's one self-hosted Linux machine, which is also where the hand-run matches used to go - and while one
+# organization's one self-hosted Linux machine, which is also where the hand-run matches used to go - and while one
 # ran there, no private repository could push without biasing it). Manual only: nothing here runs on a push or a
 # pull request.
 #
-# This file is a CALLER of the organisation's reusable match workflow, reckless-technology/pawnstar's match-core.yml
+# This file is a CALLER of the organization's reusable match workflow, reckless-technology/pawnstar's match-core.yml
 # (pawnstar#93; its guide is docs/match-core.md there), and holds only what is Trebuchet's:
 #
 #   refs   -> resolves the two refs to commits (the baseline defaults to the newest vMAJOR.MINOR.PATCH tag)
@@ -20,7 +20,7 @@ name: Match
 # A workflow_dispatch workflow cannot be dispatched until its file is on the default branch, so a change to this file
 # is dispatched from its own branch with `gh workflow run match.yml --ref <branch>`.
 #
-# Capacity: every public repository of the organisation shares about 60 concurrent hosted jobs; the core keeps
+# Capacity: every public repository of the organization shares about 60 concurrent hosted jobs; the core keeps
 # max-parallel at 40. Keep `chunks` modest for a trial.
 
 on:
@@ -54,7 +54,7 @@ on:
         description: 'Fixed search depth instead of a time control (empty = use the time control)'
         default: ''
       games:
-        description: 'Total games (rounded up to whole colour-reversed pairs)'
+        description: 'Total games (rounded up to whole color-reversed pairs)'
         default: '4000'
       chunks:
         description: 'Number of chunk jobs'

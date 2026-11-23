@@ -15,7 +15,7 @@ enum
     NNUE_HIDDEN = 1024 ///< hidden-layer width; must equal HIDDEN_SIZE in nnue.c / features.py
 };
 
-typedef struct NnueNetwork      NnueNetwork;      ///< a loaded quantised net (layout private to nnue.c)
+typedef struct NnueNetwork      NnueNetwork;      ///< a loaded quantized net (layout private to nnue.c)
 typedef struct NnueRefreshCache NnueRefreshCache; ///< per-thread accumulator refresh cache (see nnue.h)
 
 /**

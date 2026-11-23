@@ -17,7 +17,7 @@
 #include <immintrin.h>
 #endif
 
-/** @brief Architecture / quantisation contract — must match nnue-training's pytorch/features.py. */
+/** @brief Architecture / quantization contract — must match nnue-training's pytorch/features.py. */
 enum
 {
     HIDDEN_SIZE       = NNUE_HIDDEN, // 1024
@@ -32,7 +32,7 @@ enum
 /**
  * @brief Whether a perspective whose king sits on files e-h is mirrored horizontally before indexing.
  *
- * Always on in Trebuchet — the shape the shared evaluator standardised on is Trebuchet's, mirroring included
+ * Always on in Trebuchet — the shape the shared evaluator standardized on is Trebuchet's, mirroring included
  * (+14.3 Elo, SPRT-gated here). It is a named constant rather than a literal because the container's
  * format version and its mirroring flag are both *derived* from it, exactly as the C++ port derives them
  * from its build knob: turning mirroring off would make this a different format, not the same format with
@@ -43,7 +43,7 @@ enum
     IS_KING_MIRRORING_ENABLED = 1
 };
 
-/** @brief The shared Reckless net container, `RNNUE1` — one format for every engine in the organisation.
+/** @brief The shared Reckless net container, `RNNUE1` — one format for every engine in the organization.
  *
  * The retired `ZNNUE5`/`ZNNUE4`/`ZNNUE3` formats carried an 8-byte magic and nothing else, so a net for a
  * different architecture was told apart only by its file size. This header describes itself: every
@@ -99,7 +99,7 @@ _Static_assert(offsetof(NetHeader, header_crc) == 56, "header_crc must sit at of
 /// Bytes of the header that header_crc covers: everything before header_crc itself.
 #define NET_HEADER_CRC_BYTES offsetof(NetHeader, header_crc)
 
-/** @brief The quantised network weights, loaded from a `.nnue` file (completes accumulator.h's forward decl). */
+/** @brief The quantized network weights, loaded from a `.nnue` file (completes accumulator.h's forward decl). */
 struct NnueNetwork
 {
     int16_t feature_transformer_weight[INPUT_FEATURES][HIDDEN_SIZE]; ///< feature-major, king-bucketed

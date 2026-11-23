@@ -1,7 +1,7 @@
 # Trebuchet NNUE — architecture & training guide
 
 Trebuchet evaluates positions with the **shared Reckless NNUE**: one network shape and one file format
-(`RNNUE1`) for every chess engine in the organisation, so a net trained once loads in all of them and a new
+(`RNNUE1`) for every chess engine in the organization, so a net trained once loads in all of them and a new
 evaluation function is developed once rather than once per engine (Jonny, 2026-10-27). The shape is
 Trebuchet's own — its two additions over the pawnstar engines' were measured and SPRT-gated here — and the
 container is pawnstar's, extended with the bucket map's contents and an integrity check.
@@ -22,8 +22,8 @@ The pipeline is four stages:
    data                               nnue-training (shared)             engine (C)
  ┌────────────────────────┐  text     ┌──────────────────────┐  .nnue   ┌────────────────────┐
  │ ./build/               │ ────────▶ │ the shared trainer   │ ───────▶ │ src/nnue.c loader  │
- │  trebuchet-datagen     │  fen;     │  featurise → SCReLU  │  RNNUE1  │  + integer forward │
- │  (self-play)           │  score;   │  net → quantise      │          │  behind evaluate() │
+ │  trebuchet-datagen     │  fen;     │  featurize → SCReLU  │  RNNUE1  │  + integer forward │
+ │  (self-play)           │  score;   │  net → quantize      │          │  behind evaluate() │
  │  OR                    │  wdl      │                      │          │                    │
  │ ./build/               │           └──────────────────────┘          └────────────────────┘
  │  trebuchet-bullet2text │                      │                                │
@@ -58,11 +58,11 @@ feature transformer    : 6144 → 1024    (one 1024-wide accumulator per perspec
 concatenate            : [own(1024), opponent(1024)] = 2048
 activation             : SCReLU(x) = clamp(x, 0, 1)²
 output buckets         : 1024 → 8 heads; the head is selected by total piece count
-                         ((popcount(occupied) − 2) / 4), dequantised to centipawns
+                         ((popcount(occupied) − 2) / 4), dequantized to centipawns
 ```
 
 Two accumulators are maintained, one per perspective (side-to-move "own" and the opponent). Black's
-perspective mirrors the board vertically (`square ^ 56`) and swaps the own/opponent colour halves, so the
+perspective mirrors the board vertically (`square ^ 56`) and swaps the own/opponent color halves, so the
 network only ever learns "from the side to move's point of view." Horizontal king mirroring folds the
 board's left/right symmetry the same way: instead of spending 4 of 8 buckets on kingside king placements,
 mirrored positions share weights, so every bucket trains on twice the effective data at the same file size.
@@ -92,7 +92,7 @@ along with everything else above: a net of any other width carries a header the 
 
 ---
 
-## 2. Quantisation & on-disk format (`RNNUE1`)
+## 2. Quantization & on-disk format (`RNNUE1`)
 
 The shared trainer exports a fixed-point `int16` network; the engine loads it directly and does an all-integer
 forward pass (a float `.pt` checkpoint is saved alongside for inspection only).
@@ -187,19 +187,19 @@ The export step prints how many transformer weights saturate `int16` (should be 
   accumulator refresh when a king crosses the d/e boundary (served by the same finny refresh cache as
   bucket changes).
 - **SCReLU over clipped ReLU.** `clamp(x,0,1)²` gives a stronger net than plain clipped ReLU at the same
-  size and is cheap as an integer kernel (`(h·w)·h`). The clamp bound is exactly `QA`, so quantisation and
+  size and is cheap as an integer kernel (`(h·w)·h`). The clamp bound is exactly `QA`, so quantization and
   activation share one constant.
 - **Hidden size 1024.** Bigger accumulators improve eval but cost proportional per-node time and training
   memory. 512 was the shipped balance until 1.4B positions saturated it: at that scale 1024 gained +52 Elo
   at fixed depth and **+14.7 at time control** (cap1) — the eval gain outran the doubled per-node cost.
   `nnue-training`'s PyTorch trainer (whose knobs the rest of this list names) uses an
-  `EmbeddingBag(mode="sum")` feature transformer so a batch never materialises a `[batch, 32, hidden]`
+  `EmbeddingBag(mode="sum")` feature transformer so a batch never materializes a `[batch, 32, hidden]`
   intermediate — this is what keeps larger hidden sizes trainable on an 8 GB GPU.
 - **WDL blend (`--wdl-lambda`).** The training label is `λ·game_result + (1−λ)·sigmoid(score/400)`: λ→1
   trusts the eventual game outcome, λ→0 trusts the search score of the position. Mid-range values train the
   cleanest net; the nets up to `cap2` used λ=0.3, and the net shipped since the release then
   numbered 3.0.0 was trained at λ=0.0 — the eval sigmoid alone.
-- **Streaming vs monolithic training.** Holding the whole featurised dataset in RAM caps out around ~230M
+- **Streaming vs monolithic training.** Holding the whole featurized dataset in RAM caps out around ~230M
   positions on a 62 GB box. Past that, per-shard `.npz` caches are streamed one at a time (`--shard-dir`),
   which is how the 1.4B-position nets up to `cap2` trained. Shard-order shuffling (reseeded per epoch) plus a
   full in-shard permutation is effectively i.i.d. at ~95M-position shards.
@@ -212,7 +212,7 @@ The export step prints how many transformer weights saturate `int16` (should be 
 ## 4. The contract & verification gates
 
 `nnue-training`'s `pytorch/features.py` is the **single source of truth** for feature indexing and
-quantisation; `src/nnue.c` must reproduce `feature_index`, `king_bucket`, and `integer_eval`
+quantization; `src/nnue.c` must reproduce `feature_index`, `king_bucket`, and `integer_eval`
 byte-for-byte. Two gates enforce this and are never skipped:
 
 - **0-cp trainer parity** — `nnue-training`'s `pytorch/verify.py` loads a `.nnue`, evaluates a FEN set
@@ -224,7 +224,7 @@ byte-for-byte. Two gates enforce this and are never skipped:
   incrementally-maintained accumulator against a full refresh at every node, bit-identical (guards the
   finny-cache / king-bucket refresh logic).
 
-Also worth a spot-check: `eval(pos) == eval(colour-mirror of pos)` — the perspective symmetry must hold.
+Also worth a spot-check: `eval(pos) == eval(color-mirror of pos)` — the perspective symmetry must hold.
 Every net change is then **SPRT-gated** like any strength change (see §7).
 
 ---
@@ -251,7 +251,7 @@ consumes, so the train / verify / SPRT steps afterwards are identical.
 
 Generate self-play games at a fixed node budget, fanned across all cores. Each worker is an independent
 `./build/trebuchet-datagen` process with its own seed writing one shard; only quiet, not-yet-decided positions are
-emitted (one record per ply), labelled with the eventual game result as WDL.
+emitted (one record per ply), labeled with the eventual game result as WDL.
 
 ```bash
 make datagen                                     # build ./build/trebuchet-datagen first
@@ -286,10 +286,10 @@ Convert each bulletformat shard to Trebuchet's text format, subsampling with a s
 for it: the production **bullet** route on CUDA, and the **PyTorch** route (`pytorch/train.py`), which
 reads the same `fen;score;wdl` text the tools above emit. Trebuchet's own PyTorch trainer *was* that
 pipeline — it was removed on 2026-10-31, being a byte-for-byte duplicate of it. Either route writes a
-quantised payload, which `nnue-training/spec/stamp_net.py` — or `tools/stamp_net.py` here, the same tool
+quantized payload, which `nnue-training/spec/stamp_net.py` — or `tools/stamp_net.py` here, the same tool
 over the same constants — wraps in the `RNNUE1` container.
 
-Two levers worth carrying into a run, both measured on this project's hardware: the whole featurised
+Two levers worth carrying into a run, both measured on this project's hardware: the whole featurized
 dataset holds in RAM only to about **230M positions** on a 62 GB box, past which the PyTorch route
 streams per-shard caches one at a time (which is how the 1.4B-position nets trained); and the WDL blend
 `λ·game_result + (1−λ)·sigmoid(score/400)` trains cleanest mid-range — the nets up to `cap2` used
@@ -347,8 +347,8 @@ every result and lesson is in `.claude/memory/trebuchet-eval-experiments.md`.
   state rebuilds that perspective from a thread-local per-`(perspective, mirror, bucket)` cached accumulator
   (plus the board it was built from), applying only piece diffs; each entry carries the net it was built for,
   so an entry belonging to another net is simply a miss when a new net loads.
-- **AVX2 forward** — vectorised accumulator column add/sub and the SCReLU output dot, with a scalar fallback.
-- **Shared lockless eval cache** — memoises `evaluate()` results (biggest win: qsearch stand-pat).
+- **AVX2 forward** — vectorized accumulator column add/sub and the SCReLU output dot, with a scalar fallback.
+- **Shared lockless eval cache** — memoizes `evaluate()` results (biggest win: qsearch stand-pat).
 
 Load a net at runtime with `setoption name EvalFile value nets/<name>.nnue`; an empty value asks for the
 build-time-embedded net and gets it. A **refused** net changes nothing — the net that was playing keeps
@@ -456,12 +456,12 @@ Trebuchet's `nets/reckless-lc0-runf-sb870.nnue` and Pawnstar's `nnue/pawnstar-v2
 run's `runF-pawnstar-sb870`) are one file, SHA-256 `c8a29b328849cd1ea60c65f5d3dea84f585f404037ec026c44a94e1174b1cc34`,
 and both release binaries embed it. Measured on lin-0 (Ryzen 7 6800H, 8 physical cores), 2026-11-07 UTC,
 with fastchess 1.8.2 alpha and the published release binaries (Trebuchet's `linux-x86-64-v3-pext`),
-frozen and re-hashed, no CI job alongside: 8+0.08, concurrency 7, paired colours, 306 lines (298 distinct
+frozen and re-hashed, no CI job alongside: 8+0.08, concurrency 7, paired colors, 306 lines (298 distinct
 positions) from the TSCP-derived opening set, draw adjudication movenumber=40 movecount=8 score=20,
 resign movecount=3 score=600, `Threads=1`, `Hash=64`, own book off, the game count fixed in advance.
 Pawnstar's defaults (`OwnBook=true`, and in 2.2.0 16 threads on that machine) must be overridden or the
 measurement is meaningless. This is single-thread, on that machine, at that time control; it does not
-generalise beyond them, and multi-thread was not re-measured.
+generalize beyond them, and multi-thread was not re-measured.
 
 Both corrected intervals, and that nominal one, are the primary lines of `tools/opening_icc.py` in
 `pawnstar`, at `089e19a` or later, so a rerun over those matches' PGNs gives these figures.

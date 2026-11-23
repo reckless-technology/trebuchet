@@ -2,7 +2,7 @@
   // Debug configs for Trebuchet: gdb through the C/C++ extension (ms-vscode.cpptools) on Linux and Windows, lldb through
   // CodeLLDB (vadimcn.vscode-lldb) on macOS, where no gdb exists. Each platform has the same three shapes:
   // "Launch" builds the ASan/UBSan debug binary first and runs it in the integrated terminal so you can type UCI
-  // commands (uci, position…, go…); "Launch (release)" runs the optimised ./build/trebuchet (no -g, so no source lines);
+  // commands (uci, position…, go…); "Launch (release)" runs the optimized ./build/trebuchet (no -g, so no source lines);
   // "Attach" hooks the debugger onto an already-running engine (pick the process, e.g. one a GUI or fastchess spawned).
   //
   // Windows: the binaries are MSYS2 CLANG64 builds, debugged with that environment's gdb. They load libwinpthread and,

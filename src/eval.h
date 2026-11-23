@@ -28,7 +28,7 @@ void eval_cache_free(EvalCache *cache);
 /**
  * @brief Static evaluation from the side-to-move's perspective (centipawns).
  *
- * Results are memoised in a small shared lockless eval cache keyed by the Zobrist key (biggest win:
+ * Results are memoized in a small shared lockless eval cache keyed by the Zobrist key (biggest win:
  * qsearch stand-pat re-evaluations).
  */
 int evaluate(const Position *pos, EvalCache *cache);

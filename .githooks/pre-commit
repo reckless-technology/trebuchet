@@ -3,7 +3,7 @@
 # Copyright (C) 2026 Jonny Reckless
 #
 # Pre-commit hook: reject a commit made under any identity but Jonny Reckless <jonny@recklesstechnology.com> -
-# every commit's in the reckless-technology organisation; the pre-push hook checks the commits a rebase or a
+# every commit's in the reckless-technology organization; the pre-push hook checks the commits a rebase or a
 # cherry-pick makes - and commits whose staged C sources are not clang-format-clean.
 # Enable it in a clone with:  make hooks   (sets core.hooksPath to .githooks)
 set -euo pipefail
