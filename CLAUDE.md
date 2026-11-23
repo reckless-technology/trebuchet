@@ -59,7 +59,7 @@ python3 tools/stamp_net.py <net>  # (re)stamp a weight payload into the shared R
 ./build/trebuchet bookcheck     # Polyglot keys vs the 9 official spec vectors
 ./build/trebuchet embookcheck   # the EMBEDDED book: blob, entry invariants, probe path (11 checks)
 make baseline          # snapshot ./build/trebuchet -> ./build/trebuchet-base
-OPENINGS=... tools/sprt.sh [rounds]   # self-play SPRT vs ./build/trebuchet-base (engines via CAND/BASE, not argv)
+tools/sprt.sh [rounds]   # self-play SPRT vs ./build/trebuchet-base (engines via CAND/BASE, not argv)
 make tables            # regenerate src/generated/*.inc (Zobrist/ln/geometry/magic constants) — deliberate
 make format            # clang-format all sources in place
 make hooks             # enable the clang-format pre-commit hook (once per clone; core.hooksPath -> .githooks)
@@ -106,9 +106,13 @@ tables itself and fails CI's Windows build and the release's on any other DLL.
 
 The build is **one `clang` invocation over all of `src/*.c`** so LTO sees everything — there are no
 object files or per-file targets. `-march=native` is dev-only; a real release fans out per microarch.
-`tools/sprt.sh` runs **fastchess** (cutechess-cli is not installed here) with an openings EPD. **`OPENINGS`
-is required and has no default** - no opening set ships here, and `books/`'s Polyglot `.bin` files are not
-one. Tune via `TC` / `ELO0` / `ELO1` / `CONCURRENCY` / `HASH`. The script **pins `Threads=1`, `Hash`
+`tools/sprt.sh` runs **fastchess** (cutechess-cli is not installed here) from **the opening set pinned in
+`tools/openings.pin`**: Pawnstar's `nnue/openings.epd` (6,433 positions) at a named commit with its SHA-256, which
+the script fetches into `build/openings/`, verifies (a missing set or a mismatch stops the run) and strips of its
+`#` comments. Pawnstar's set is used, not a copy kept here, so the engines share one set and a hosted-runner match has
+a pinned source; the pin file is plain `KEY=VALUE` for a workflow to read too. `OPENINGS=<file>` overrides it for a
+one-off and the run line says it is not the pinned set; `books/`'s Polyglot `.bin` files are not an opening set.
+Tune via `TC` / `ELO0` / `ELO1` / `CONCURRENCY` / `HASH`. The script **pins `Threads=1`, `Hash`
 (16 MB) and `OwnBook=false` per engine**: trebuchet's own Threads default is `platform_cpu_count() / 2`, so an
 unpinned harness plays multi-threaded engines at a concurrency also sized from `nproc` and measures
 scheduler noise. `CONCURRENCY` defaults to one game per physical core less one (`nproc / 2 - 1`, SMT

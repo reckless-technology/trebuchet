@@ -1,0 +1,14 @@
+# The opening set tools/sprt.sh plays from, pinned. Plain KEY=VALUE lines, so a shell can `source` it and a
+# workflow can `grep` it. The set is not kept in this repository: it is Pawnstar's, public, and shared by the
+# chess engines so that a match between them is played from one set.
+#
+# To move the pin, change all four lines together: the commit, then the SHA-256 of the file at that commit
+# (`curl -fsS https://raw.githubusercontent.com/<repo>/<commit>/<path> | sha256sum`). The hash is of the file
+# exactly as committed, '#' provenance header included; tools/sprt.sh strips the comments before fastchess
+# reads it, since fastchess's EPD reader does not accept them.
+#
+# 6,433 positions (the count of non-comment lines), one per line, the first four FEN fields.
+OPENINGS_REPOSITORY=reckless-technology/pawnstar
+OPENINGS_COMMIT=55f4dce9a387412be6d8555ff61066e1e36ffd83
+OPENINGS_PATH=nnue/openings.epd
+OPENINGS_SHA256=560f4e6d8e6805f62738cd618976d70b9f58b65f8be5a19533d36017839ed616

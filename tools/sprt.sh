@@ -9,7 +9,12 @@
 #
 # Usage:  tools/sprt.sh [rounds]
 # Env:    CAND (default ./build/trebuchet), BASE (default ./build/trebuchet-base), CAND_NET, BASE_NET (EvalFile paths),
-#         TC (default 8+0.08), ELO0/ELO1 (default 0/5), CONCURRENCY, HASH, OPENINGS (REQUIRED).
+#         TC (default 8+0.08), ELO0/ELO1 (default 0/5), CONCURRENCY, HASH, OPENINGS (optional, see below).
+#
+# Openings: by default the set pinned in tools/openings.pin (Pawnstar's, at a commit, with its SHA-256) is
+#   fetched once into build/openings/, verified, and its '#' comment lines stripped. A missing set or a hash
+#   mismatch stops the run. OPENINGS=/path/to/file.epd (or .pgn) overrides it for a one-off, unverified, and
+#   the run line says so; do not quote a result from an unpinned set as the pinned one.
 #
 # Every engine option a measurement depends on is pinned below rather than left to the UCI default, the
 # same way `pawnstar/tools/pawnstar-match.sh` does it. Threads especially: trebuchet's own default is
@@ -41,17 +46,49 @@ FASTCHESS="$(command -v fastchess || true)"
 for engine in "$CAND" "$BASE"; do
     command -v "$engine" >/dev/null 2>&1 || [ -x "$engine" ] || { echo "missing engine: $engine" >&2; exit 1; }
 done
-# No opening set ships in this repo (books/ holds Polyglot .bin books, which fastchess -openings cannot
-# read - it wants EPD or PGN), so there is nothing sensible to default to and guessing a sibling repo's
-# scratch path only fails later and less clearly.
-if [ -z "$OPENINGS" ]; then
-    echo "tools/sprt.sh: set OPENINGS to an opening set for fastchess to play from." >&2
-    echo "  OPENINGS=/path/to/openings.epd tools/sprt.sh [rounds]" >&2
-    echo "  It must be EPD or PGN; this repo ships no opening set, and Polyglot books under books/ are" >&2
-    echo "  not one. Without openings every game would start from the same position." >&2
-    exit 1
+# Openings: the pinned set unless OPENINGS overrides it. fastchess needs EPD or PGN (the Polyglot books under
+# books/ are not one), and without openings every game would start from the same position.
+script_directory="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+pin_file="$script_directory/openings.pin"
+openings_format=epd
+if [ -n "$OPENINGS" ]; then
+    [ -f "$OPENINGS" ] || { echo "tools/sprt.sh: missing openings: $OPENINGS" >&2; exit 1; }
+    case "$OPENINGS" in *.pgn) openings_format=pgn ;; esac
+    openings_label="$OPENINGS (NOT the pinned set)"
+else
+    [ -f "$pin_file" ] || { echo "tools/sprt.sh: missing $pin_file, which names the opening set" >&2; exit 1; }
+    pin_value() {
+        local value
+        value="$(sed -n "s/^$1=//p" "$pin_file")"
+        [ -n "$value" ] || { echo "tools/sprt.sh: $pin_file has no $1" >&2; exit 1; }
+        printf '%s' "$value"
+    }
+    pinned_repository="$(pin_value OPENINGS_REPOSITORY)"
+    pinned_commit="$(pin_value OPENINGS_COMMIT)"
+    pinned_path="$(pin_value OPENINGS_PATH)"
+    pinned_sha256="$(pin_value OPENINGS_SHA256)"
+    cache_directory="$script_directory/../build/openings"
+    raw_file="$cache_directory/$pinned_commit.epd"
+    OPENINGS="$cache_directory/$pinned_commit.stripped.epd"
+    mkdir -p "$cache_directory"
+    if [ -f "$raw_file" ] && [ "$(sha256sum "$raw_file" | cut -d' ' -f1)" != "$pinned_sha256" ]; then
+        rm -f "$raw_file"  # a damaged cache is refetched, and checked again below
+    fi
+    if [ ! -f "$raw_file" ]; then
+        url="https://raw.githubusercontent.com/$pinned_repository/$pinned_commit/$pinned_path"
+        curl -fsSL --retry 3 -o "$raw_file.part" "$url" || { rm -f "$raw_file.part"; echo "tools/sprt.sh: could not fetch the pinned openings from $url" >&2; exit 1; }
+        mv "$raw_file.part" "$raw_file"
+    fi
+    actual_sha256="$(sha256sum "$raw_file" | cut -d' ' -f1)"
+    if [ "$actual_sha256" != "$pinned_sha256" ]; then
+        echo "tools/sprt.sh: opening set hash mismatch: expected $pinned_sha256, got $actual_sha256 ($pinned_repository@$pinned_commit:$pinned_path)" >&2
+        rm -f "$raw_file"
+        exit 1
+    fi
+    grep -v '^#' "$raw_file" > "$OPENINGS"
+    [ -s "$OPENINGS" ] || { echo "tools/sprt.sh: the pinned opening set has no positions" >&2; exit 1; }
+    openings_label="$pinned_repository@${pinned_commit:0:12}:$pinned_path sha256=${pinned_sha256:0:12} ($(wc -l < "$OPENINGS") positions)"
 fi
-[ -f "$OPENINGS" ] || { echo "missing openings: $OPENINGS" >&2; exit 1; }
 
 # Optional per-engine EvalFile (NNUE net). Absent => that side uses its default (trebuchet: the embedded net).
 cand_net_arg=(); [ -n "${CAND_NET:-}" ] && cand_net_arg=(option.EvalFile="$CAND_NET")
@@ -61,13 +98,13 @@ cand_dir_arg=(); [ -n "${CAND_DIR:-}" ] && cand_dir_arg=(dir="$CAND_DIR")
 base_dir_arg=(); [ -n "${BASE_DIR:-}" ] && base_dir_arg=(dir="$BASE_DIR")
 
 echo "SPRT  cand=$CAND ${CAND_NET:+net=$CAND_NET}  base=$BASE ${BASE_NET:+net=$BASE_NET}  TC=$TC elo[$ELO0,$ELO1] rounds=$ROUNDS"
-echo "      Threads=1 Hash=${HASH}MB OwnBook=false per engine, concurrency=$CONCURRENCY, openings=$OPENINGS"
+echo "      Threads=1 Hash=${HASH}MB OwnBook=false per engine, concurrency=$CONCURRENCY, openings=$openings_label"
 exec "$FASTCHESS" \
     -engine cmd="$CAND" name=cand "${cand_net_arg[@]}" "${cand_dir_arg[@]}" \
     -engine cmd="$BASE" name=base "${base_net_arg[@]}" "${base_dir_arg[@]}" \
     -each proto=uci tc="$TC" option.Threads=1 option.Hash="$HASH" option.OwnBook=false \
     -rounds "$ROUNDS" -games 2 -repeat \
-    -openings file="$OPENINGS" format=epd order=random \
+    -openings file="$OPENINGS" format=$openings_format order=random \
     -draw movenumber=40 movecount=8 score=20 -resign movecount=3 score=600 \
     -sprt elo0="$ELO0" elo1="$ELO1" alpha=0.05 beta=0.05 \
     -concurrency "$CONCURRENCY" -ratinginterval 20
