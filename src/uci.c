@@ -197,7 +197,7 @@ static void set_position(UciSession *session, char **save_ptr)
         is_valid = position_set_fen(&pos, fen);
     }
     // Ignore a malformed / illegal `position` command rather than searching an inconsistent board — keep the
-    // previous game position (standard, forgiving UCI behaviour).
+    // previous game position (standard, forgiving UCI behavior).
     if (!is_valid)
     {
         return;
@@ -744,7 +744,7 @@ void uci_loop(Engine *engine)
             printf("%s\n", position_fen(&session.game, fen_buf));
             fflush(stdout);
         }
-        // The licence and the third-party notices the embedded network's ODbL 1.0 training data obliges -
+        // The license and the third-party notices the embedded network's ODbL 1.0 training data obliges -
         // the same text `trebuchet license` prints, reachable from a GUI or a harness over the protocol. It is
         // the standard command across the Reckless engines. Printing only: no engine or search state is
         // read or written, so it cannot move a node count.
@@ -763,7 +763,7 @@ void uci_loop(Engine *engine)
 }
 
 /**
- * @brief Print the licence and the third-party notices this binary owes, then return.
+ * @brief Print the license and the third-party notices this binary owes, then return.
  *
  * The ODbL 1.0 notice is the reason this exists. The shipped network is embedded in every binary at build
  * time (Makefile NET) and was trained entirely on Leela Chess Zero self-play training data, which is
@@ -811,7 +811,7 @@ int uci_run(Engine *engine, int argc, char **argv)
 {
     if (argc > 1)
     {
-        // The licence and the third-party notices, above all the ODbL 1.0 notice the embedded network owes:
+        // The license and the third-party notices, above all the ODbL 1.0 notice the embedded network owes:
         // a downloaded binary carries the Produced Work, so it carries the notice too. Printing only.
         if (!strcmp(argv[1], "license") || !strcmp(argv[1], "licence"))
         {
@@ -1582,7 +1582,7 @@ int run_fuzz_check(void)
 
     // A castling field can claim a right the board cannot support, and the generator castles on the rights
     // alone (movegen.c, "Castling"), so position_set_fen keeps only the rights a king on its home square and
-    // a rook of that colour on the named corner back. Each case gives the rights that must read back and the
+    // a rook of that color on the named corner back. Each case gives the rights that must read back and the
     // number of castling moves generate_legal must then emit for the side to move.
     static const struct
     {
@@ -1592,7 +1592,7 @@ int run_fuzz_check(void)
         const char *what;
     } castling_fens[] = {
         // A Chess960 game read as standard chess (the defect's own position): "KQ" claimed with White's rooks
-        // on c1 and g1. Unsanitised, e1c1 was emitted once the c1 rook moved away, castling a rook off an
+        // on c1 and g1. Unsanitized, e1c1 was emitted once the c1 rook moved away, castling a rook off an
         // empty a1 and leaving the colors bitboards claiming a square the mailbox calls empty.
         {"b2rk3/p2p1nr1/1p2n1p1/1Np2p1p/2P2P1P/1P1BP1P1/P4N2/2R1K1R1 w KQ - 1 16", 0, 0, "rooks off their corners"},
         {"4k3/8/8/8/8/8/8/4K3 w KQkq - 0 1", 0, 0, "every right claimed, no rook at all"},
@@ -1600,9 +1600,9 @@ int run_fuzz_check(void)
         {"r3k2r/8/8/8/8/8/8/4K2R w KQkq - 0 1",
          MAY_WHITE_CASTLE_KINGSIDE | MAY_BLACK_CASTLE_KINGSIDE | MAY_BLACK_CASTLE_QUEENSIDE, 1,
          "one side's queenside right dropped"},
-        // A rook of the wrong colour backs no right. The knight on b1 blocks the rank, so the white king is
+        // A rook of the wrong color backs no right. The knight on b1 blocks the rank, so the white king is
         // not in check — castling must be barred by the missing white rook, not by an attack on the path.
-        {"4k3/8/8/8/8/8/8/rN2K3 w Q - 0 1", 0, 0, "a rook of the wrong colour on the corner"},
+        {"4k3/8/8/8/8/8/8/rN2K3 w Q - 0 1", 0, 0, "a rook of the wrong color on the corner"},
         {"r3k2r/8/8/8/8/8/8/R2K3R w KQkq - 0 1", MAY_BLACK_CASTLE_KINGSIDE | MAY_BLACK_CASTLE_QUEENSIDE, 0,
          "king off its home square"},
         // The right stands — king and both rooks are home; only the move is blocked, by our own knight.
@@ -1649,7 +1649,7 @@ int run_fuzz_check(void)
  * equal trades, queen/rook/knight blunders into defended pieces, x-ray batteries on both a file (rear rook)
  * and a diagonal (queen behind bishop), least-valuable-attacker ordering, a high-value defender declining a
  * losing recapture, the king unable to recapture into a guarded square, and en-passant (plain and
- * recaptured). Genuine oracle values (correct chess), not a lock-in of current behaviour.
+ * recaptured). Genuine oracle values (correct chess), not a lock-in of current behavior.
  * @return 0 if every case matches, 1 otherwise.
  */
 int run_see_check(void)

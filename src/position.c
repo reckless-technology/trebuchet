@@ -16,7 +16,7 @@
 // engine's historical xorshift64* draw order (seed 0x9E3779B97F4A7C15): 12 (color,type) piece blocks of 64
 // squares, 16 castling masks, 8 en-passant files (each key replicated onto that file's rank-3/rank-6 target
 // squares), then the side key. The draw ORDER is part of the engine's identity — every position key, the TT
-// behaviour, and the bench node signature depend on these exact values.
+// behavior, and the bench node signature depend on these exact values.
 #include "generated/zobrist_tables.inc"
 
 // clang-format off
@@ -453,7 +453,7 @@ bool position_is_move_legal(const Position *pos, const Move move, const Bitboard
 
 /**
  * @brief The castling rights @p pos's board can actually support: a right survives only where that side's
- * king stands on its home square and a rook of that colour on the corner the right names.
+ * king stands on its home square and a rook of that color on the corner the right names.
  *
  * The move generator castles on the rights, the empty squares and the squares the king crosses, and never
  * looks for the rook (movegen.c, "Castling"). In play that is sound: CastleMask revokes a right the moment
@@ -641,7 +641,7 @@ bool position_set_fen(Position *pos, const char *fen)
     }
     // Drop every right the board cannot support, so the generator's rights-only castling test stays sound on
     // FEN input too (supported_castling_rights above). Masked before the key is folded in below, so a
-    // sanitised position hashes as the position it actually is.
+    // sanitized position hashes as the position it actually is.
     pos->castling_rights &= supported_castling_rights(pos);
     if (strcmp(ep_str, "-") != 0 && strlen(ep_str) >= 2)
     {
@@ -674,7 +674,7 @@ bool position_set_fen(Position *pos, const char *fen)
     // pawn, it never adds a piece). Reject anything else: the search and movegen assume both kings exist
     // (attack lookups on a bogus king square), and the 16-per-side cap is what makes MAX_MOVES provably
     // sufficient so the generators write unchecked (see movegen.h). Callers handling untrusted input
-    // (UCI `position fen`, datagen openings) must honour `false`.
+    // (UCI `position fen`, datagen openings) must honor `false`.
     bool is_valid = !is_malformed && popcount(position_pieces(pos, WHITE, KING)) == 1 &&
                     popcount(position_pieces(pos, BLACK, KING)) == 1 && popcount(pos->colors[WHITE]) <= 16 &&
                     popcount(pos->colors[BLACK]) <= 16;
@@ -684,7 +684,7 @@ bool position_set_fen(Position *pos, const char *fen)
         update_checkers(pos); // seed the cached checkers for the root position (make_move maintains it thereafter)
     }
 
-    // Authoritative accumulator rebuild (add_piece() updated it incrementally from an uninitialised state above).
+    // Authoritative accumulator rebuild (add_piece() updated it incrementally from an uninitialized state above).
     if (pos->accumulator.net != NULL)
     {
         nnue_refresh(&pos->accumulator, pos);

@@ -8,7 +8,7 @@ GUI, a book builder or a test harness actually talks to, by running the binary a
 
 - the notation subcommands the book builder uses (moves, polykey, san, applymoves), against hand-verified answers -
   pinned-pawn promotion captures, the Polyglot specification's keys, every SAN disambiguation form;
-- the NNUE paths outside nnuecheck: nnueeval (and the net's colour symmetry), and every verdict the shared RNNUE1
+- the NNUE paths outside nnuecheck: nnueeval (and the net's color symmetry), and every verdict the shared RNNUE1
   container's loader can reach - a bad magic, a net in a retired ZNNUE container, a corrupt header, a sound header
   describing another architecture (field by field), a non-zero reserved byte, a truncated, over-long or empty file,
   and a corrupt payload;
@@ -262,7 +262,7 @@ def restamp(payload, **overrides):
 
 
 def check_nnue(gate, scratch):
-    """nnueeval, the net's colour symmetry, and every verdict the RNNUE1 loader can reach.
+    """nnueeval, the net's color symmetry, and every verdict the RNNUE1 loader can reach.
 
     The container's whole purpose is that a net which is not this engine's net is refused loudly rather
     than played, so each refusal below is a case that once loaded cleanly in some engine and evaluated
@@ -301,7 +301,7 @@ def check_nnue(gate, scratch):
         write_bytes(paths[name], data)
     paths["good"] = NET
 
-    # A position and its colour mirror (ranks flipped, colours swapped, the other side to move) must evaluate alike.
+    # A position and its color mirror (ranks flipped, colors swapped, the other side to move) must evaluate alike.
     fen = "r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3"
     mirror = "rnbqkb1r/pppp1ppp/5n2/4p3/4P3/2N5/PPPP1PPP/R1BQKBNR b KQkq - 2 3"
     status, out, _ = gate.run("nnueeval", NET, stdin=f"{START_FEN}\n\nnot a fen\n{fen}\n{mirror}\n")
@@ -744,7 +744,7 @@ def check_unsupported_castling_rights(gate):
     looks for the rook — sound in play, where a right is revoked the moment a king's or rook's home square is
     vacated or entered, so a right is the engine's own record that both pieces are home. `position fen` is the
     one way in for a right no rook backs: this Chess960 game read as standard chess claims KQ with White's
-    rooks on c1 and g1, and unsanitised the search emitted e1c1 once the c1 rook moved away and castled a rook
+    rooks on c1 and g1, and unsanitized the search emitted e1c1 once the c1 rook moved away and castled a rook
     off an empty a1.
     """
     chess960_as_standard = "b2rk3/p2p1nr1/1p2n1p1/1Np2p1p/2P2P1P/1P1BP1P1/P4N2/2R1K1R1 w KQ - 1 16"
@@ -757,7 +757,7 @@ def check_unsupported_castling_rights(gate):
     want = ["b2rk3/p2p1nr1/1p2n1p1/1Np2p1p/2P2P1P/1P1BP1P1/P4N2/2R1K1R1 w - - 1 16",
             "4k3/8/8/8/8/8/8/4K3 w - - 0 1", "r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1",
             "r3k2r/8/8/8/8/8/8/4K2R w Kkq - 0 1", "r3k2r/8/8/8/8/8/8/R2K3R w kq - 0 1"]
-    gate.report(fens == want, "position", "rights sanitised", "(a right with no rook on its corner, or with the "
+    gate.report(fens == want, "position", "rights sanitized", "(a right with no rook on its corner, or with the "
                 "king off e1/e8, is dropped; every supported right is kept)")
     if fens != want:
         print("       got:", fens, flush=True)
@@ -766,7 +766,7 @@ def check_unsupported_castling_rights(gate):
     # last, so the transposition table is warm when they are reached. Neither can castle — White's rooks are off
     # a1 and h1 — so no castling move may appear in an answer or a principal variation, and the answer must be a
     # move the position actually has. The second is the first with the c1 rook moved away, which is how the
-    # search reached b1/c1/d1 empty with the queenside right still set: unsanitised, depth 8 put e1c1 in the PV.
+    # search reached b1/c1/d1 empty with the queenside right still set: unsanitized, depth 8 put e1c1 in the PV.
     rook_moved_off_c1 = "b2rk3/p2p1nr1/1p2n1p1/1Np2p1p/2P2P1P/1P1BP1P1/P1R2N2/4K1R1 w KQ - 2 16"
     # Warm-up positions with no castling rights of their own, so any castle in the session's output is this
     # defect and nothing else.

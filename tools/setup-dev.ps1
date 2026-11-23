@@ -12,7 +12,7 @@
 
   What it sets up:
     - MSYS2 at C:\msys64, from the official base archive (its SHA-256 the digest GitHub publishes for the release
-      asset), initialised and brought up to date with pacman -Syuu
+      asset), initialized and brought up to date with pacman -Syuu
     - in its CLANG64 environment: clang, lld, compiler-rt (the sanitizers of make debug), llvm-tools (llvm-cov and
       llvm-profdata), python (the Makefile's table and embedding scripts), gdb, and make, git and zip
     - uv, from Astral's release archive (its SHA-256 the one published beside it), into %USERPROFILE%\.local\bin
@@ -161,7 +161,7 @@ function Stop-Msys2Processes {
 }
 
 # The base archive from the newest dated release of msys2/msys2-installer, refused unless its SHA-256 is the digest
-# GitHub records for the asset, unpacked beside the root and moved into place, then initialised and updated.
+# GitHub records for the asset, unpacked beside the root and moved into place, then initialized and updated.
 function Install-Msys2 {
   $headers = @{ 'User-Agent' = 'trebuchet-setup-dev' }
   if ($env:GITHUB_TOKEN) { $headers['Authorization'] = "Bearer $env:GITHUB_TOKEN" }

@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Jonny Reckless
 /**
  * @file
- * @brief NNUE evaluation: a quantised SCReLU perspective network with an incrementally-maintained accumulator.
+ * @brief NNUE evaluation: a quantized SCReLU perspective network with an incrementally-maintained accumulator.
  *
  * Position embeds an NnueAccumulator that add_piece/remove_piece/move_piece update, so make_move/set_fen keep it in
  * sync and eval is a cheap forward pass (no per-node full refresh). The accumulator carries the net it
@@ -77,7 +77,7 @@ typedef struct NnueRefusal
  *
  * A net that fails any check is **refused**: the reason goes to stderr naming the field, the file's value
  * and this engine's, and nothing falls back to another net. See nnue.c for the two checks and why a silent
- * fallback is the one behaviour this container exists to prevent.
+ * fallback is the one behavior this container exists to prevent.
  * @param refusal optional (NULL to ignore): receives the refusal line verbatim, for a caller that must
  * also say it somewhere else.
  * @return a heap-allocated net (release with nnue_free), or NULL if the net was refused.

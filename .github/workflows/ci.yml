@@ -203,7 +203,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       # clang-format is version-sensitive - a different major restyles code that is already correct - so the
-      # version is pinned to the organisation's 22.1.8 (see reckless-technology/claude-skills, skill
+      # version is pinned to the organization's 22.1.8 (see reckless-technology/claude-skills, skill
       # reckless-working-practice). Not apt: Ubuntu carries no clang-format-22, and the PyPI wheel is what the
       # development machines run, so CI and a developer's pre-commit hook agree. It goes into a venv of the job's own,
       # ahead of the image's clang-format on the PATH.

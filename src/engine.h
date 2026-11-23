@@ -81,7 +81,7 @@ typedef struct Engine
 {
     TranspositionTable tt;                  ///< the shared lockless transposition table
     SearchShared       search;              ///< stop flag, tunable parameters, LMR table
-    EvalCache          eval_cache;          ///< shared lockless eval memoisation
+    EvalCache          eval_cache;          ///< shared lockless eval memoization
     const NnueNetwork *net;                 ///< the active NNUE net (owned; never NULL — embedded by default)
     char net_origin[ENGINE_NET_ORIGIN_MAX]; ///< where `net` came from: the EvalFile path, or ENGINE_EMBEDDED_NET
 } Engine;

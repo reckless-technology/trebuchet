@@ -27,7 +27,7 @@ typedef struct SearchLimits
     bool    has_time_control; ///< a clock/move_time token was given (so a 0/negative clock ⇒ move now, not hang)
 } SearchLimits;
 
-/** @brief Zero-initialise @p limits (all fields off / no limit). */
+/** @brief Zero-initialize @p limits (all fields off / no limit). */
 static inline void search_limits_init(SearchLimits *limits)
 {
     memset(limits, 0, sizeof *limits);

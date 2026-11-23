@@ -614,7 +614,7 @@ int run_embedded_book_check(void)
     static const char *const BARE_KING_FEN = "8/8/4k3/8/8/4K3/8/8 w - - 0 1"; // no opening book holds this
     int                      failures = 0, checks = 0;
 
-    // Counts go in the free-form aux column, not the shared node column — that one is labelled "nodes".
+    // Counts go in the free-form aux column, not the shared node column — that one is labeled "nodes".
     char aux[32], commas[27];
 
     // 1. The blob itself: present, and a whole number of 16-byte Polyglot records.
@@ -753,7 +753,7 @@ int run_embedded_book_check(void)
              reply_count);
     test_result_columns(reply_ok, "embook", "reply", -1, aux, -1.0, -1.0, AFTER_E4_FEN);
 
-    // 10. A miss returns MOVE_NONE rather than a stray entry — the search must not alias a neighbouring key.
+    // 10. A miss returns MOVE_NONE rather than a stray entry — the search must not alias a neighboring key.
     Position bare_kings;
     book_position(&bare_kings, BARE_KING_FEN);
     book.rng_state     = EMBEDDED_BOOK_SEED;

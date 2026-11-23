@@ -63,7 +63,7 @@ $(BUILD_DIR):
 $(VERSION_STAMP): FORCE | $(BUILD_DIR)
 	@[ "$$(cat $@ 2>/dev/null)" = "$(TREBUCHET_VERSION)" ] || echo "$(TREBUCHET_VERSION)" > $@
 
-# The compiler and the target and optimisation flags, rewritten only when they change, and a prerequisite of the
+# The compiler and the target and optimization flags, rewritten only when they change, and a prerequisite of the
 # engine: without it `make ARCH=x86-64-v2` after `make` would find build/trebuchet up to date and leave the native build
 # in place, so a check or a benchmark of the portable build would run the wrong binary.
 FLAGS_STAMP = $(BUILD_DIR)/flags.txt
@@ -86,7 +86,7 @@ $(BIN): $(SRCS) $(HDRS) $(INCS) $(EMBED_OBJ) $(EMBED_BOOK_OBJ) $(VERSION_STAMP) 
 	$(CC) $(CFLAGS) $(SRCS) $(EMBED_OBJ) $(EMBED_BOOK_OBJ) -o $(BIN) $(LDLIBS) $(RELEASE_LDFLAGS)
 
 # Correctness build: sanitizers on, optimizer light. Used to shake out movegen UB before trusting perft.
-# -fno-sanitize-recover=undefined: UBSan reports undefined behaviour and then aborts, so a finding fails the run (and
+# -fno-sanitize-recover=undefined: UBSan reports undefined behavior and then aborts, so a finding fails the run (and
 # CI's sanitizers job); by default it prints and carries on, and the process still exits 0.
 DEBUG_FLAGS = $(STD) $(VERSION) -O1 -g -fsanitize=address,undefined -fno-sanitize-recover=undefined -fno-omit-frame-pointer $(WARN)
 debug: $(SRCS) $(HDRS) $(INCS) $(EMBED_OBJ) $(EMBED_BOOK_OBJ) $(VERSION_STAMP) | $(BUILD_DIR)
