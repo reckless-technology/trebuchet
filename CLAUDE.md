@@ -118,6 +118,29 @@ unpinned harness plays multi-threaded engines at a concurrency also sized from `
 scheduler noise. `CONCURRENCY` defaults to one game per physical core less one (`nproc / 2 - 1`, SMT
 assumed).
 
+### Strength matches on hosted runners (`.github/workflows/match.yml`)
+
+A match without lin-0: dispatch **Match** (`gh workflow run match.yml -R reckless-technology/trebuchet -f candidate_ref=<branch, tag or
+commit> -f games=400 -f chunks=6`, or the Actions tab). It is a caller of pawnstar's shared `match-core.yml`, pinned to a **commit**
+(never a branch, since the core checks out its tools at the ref it was called at; `docs/match-core.md` in Pawnstar is its guide). Its
+`build` job builds the candidate and the baseline each once with `make ARCH=x86-64-v3` (clang from apt) and uploads them with the
+opening set and a `manifest.json` as one artifact; the core plays disjoint slices of the openings in `chunks` parallel jobs and
+pools them, and the pooled result (opening-corrected Elo with its 95 % bar, the pentanomial, per-chunk CPU and nps) is in the run
+summary. Inputs: `candidate_ref`; `baseline_ref` (empty = the newest `vMAJOR.MINOR.PATCH` tag); `time_control` or a fixed
+`depth`; `baseline_time_control` for time odds; `games`, `chunks`, `concurrency` (2: a hosted runner is two physical cores),
+`hash_mb` (16, as `tools/sprt.sh`), `first_opening`. Each side plays **the net its own binary embeds** unless
+`candidate_net_url` / `baseline_net_url` (each with its `_sha256`) give an `EvalFile`; Threads=1 and OwnBook=false on both.
+`tools/match_preflight.py` runs in every chunk and fails it when a net is refused (trebuchet keeps playing the net it already
+had, so a refused `EvalFile` would otherwise be played, and reported, as the wrong net).
+
+* The openings are `tools/openings.pin`'s set, downloaded and verified against the pin's SHA-256 and handed to the core **with its
+  `#` header**: the core strips comments itself (after verifying the hash), so no stripped copy is kept.
+* It is a fixed-games match tested at the end, not a sequential SPRT (a sequential test cannot be split across chunks): use
+  `tools/sprt.sh` for a true SPRT. A time-control result is only approximately comparable between runs, since a hosted
+  runner's CPU model varies up to 1.7x; a fixed-`depth` match is deterministic across machines.
+* The workflow is manual only. A workflow_dispatch file cannot be dispatched until it is on the default branch, so a change to it
+  is dispatched from its branch with `--ref <branch>` after a temporary `push:` trigger gets it there, removed before merge.
+
 ## The testing discipline (this is the point of the project)
 
 No strength change lands on intuition. Every change to search/eval must:

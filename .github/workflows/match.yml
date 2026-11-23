@@ -1,0 +1,256 @@
+name: Match
+
+# A strength match between two Trebuchet builds, played on GitHub-hosted runners instead of by hand on lin-0 (the
+# organisation's one self-hosted Linux machine, which is also where the hand-run matches used to go - and while one
+# ran there, no private repository could push without biasing it). Manual only: nothing here runs on a push or a
+# pull request.
+#
+# This file is a CALLER of the organisation's reusable match workflow, reckless-technology/pawnstar's match-core.yml
+# (pawnstar#93; its guide is docs/match-core.md there), and holds only what is Trebuchet's:
+#
+#   refs   -> resolves the two refs to commits (the baseline defaults to the newest vMAJOR.MINOR.PATCH tag)
+#   build  -> builds both engines (`make`, clang from apt, ARCH=x86-64-v3) and gathers them, the pinned opening set,
+#             this repository's preflight and a manifest.json into ONE artifact, `match-inputs`
+#   match  -> match-core.yml: fastchess, the plan, the chunk matrix, the pool, with tools/match_preflight.py as its
+#             `preflight`
+#
+# The core is pinned to a COMMIT, never a branch, because it checks its own tools out at the commit it was called
+# at. To move the pin, change the SHA on the `uses:` line below and read docs/match-core.md at the new one.
+#
+# A workflow_dispatch workflow cannot be dispatched until its file is on the default branch, so a change to this file
+# is dispatched from its own branch with `gh workflow run match.yml --ref <branch>`.
+#
+# Capacity: every public repository of the organisation shares about 60 concurrent hosted jobs; the core keeps
+# max-parallel at 40. Keep `chunks` modest for a trial.
+
+on:
+  workflow_dispatch:
+    inputs:
+      candidate_ref:
+        description: 'Candidate: branch, tag or commit'
+        default: 'main'
+      baseline_ref:
+        description: 'Baseline: branch, tag or commit (empty = the newest vMAJOR.MINOR.PATCH tag)'
+        default: ''
+      candidate_net_url:
+        description: 'Candidate net URL (empty = the net the candidate ref embeds)'
+        default: ''
+      candidate_net_sha256:
+        description: 'SHA-256 of the candidate net (required with a URL)'
+        default: ''
+      baseline_net_url:
+        description: 'Baseline net URL (empty = the net the baseline ref embeds)'
+        default: ''
+      baseline_net_sha256:
+        description: 'SHA-256 of the baseline net (required with a URL)'
+        default: ''
+      time_control:
+        description: 'Time control, e.g. 8+0.08 (ignored when a depth is given)'
+        default: '8+0.08'
+      baseline_time_control:
+        description: 'Time odds: the baseline plays this time control instead (empty = the same clock)'
+        default: ''
+      depth:
+        description: 'Fixed search depth instead of a time control (empty = use the time control)'
+        default: ''
+      games:
+        description: 'Total games (rounded up to whole colour-reversed pairs)'
+        default: '4000'
+      chunks:
+        description: 'Number of chunk jobs'
+        default: '20'
+      concurrency:
+        description: 'Games at once per chunk job (a hosted runner is 2 physical cores)'
+        default: '2'
+      hash_mb:
+        description: 'Transposition table per engine, MB (tools/sprt.sh plays 16)'
+        default: '16'
+      first_opening:
+        description: 'First position of the pinned opening set to play (1-based; the chunks take consecutive slices)'
+        default: '1'
+
+permissions:
+  contents: read
+
+jobs:
+  refs:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    outputs:
+      candidate_sha: ${{ steps.refs.outputs.candidate_sha }}
+      baseline_sha: ${{ steps.refs.outputs.baseline_sha }}
+      baseline_ref: ${{ steps.refs.outputs.baseline_ref }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Resolve the refs
+        id: refs
+        env:
+          IN_CANDIDATE: ${{ inputs.candidate_ref || 'main' }}
+          IN_BASELINE: ${{ inputs.baseline_ref }}
+        run: |
+          python3 - <<'PY'
+          import os, subprocess
+
+          def sh(*args):
+              return subprocess.run(args, check=True, capture_output=True, text=True).stdout.strip()
+
+          env = os.environ
+          # Resolved to commits here, once, so every job builds exactly what this named.
+          sh("git", "fetch", "--tags", "--force", "origin", "+refs/heads/*:refs/remotes/origin/*")
+          def resolve(ref):
+              for candidate in (ref, "origin/" + ref):
+                  try:
+                      return sh("git", "rev-parse", "--verify", candidate + "^{commit}")
+                  except subprocess.CalledProcessError:
+                      continue
+              raise SystemExit(f"::error::cannot resolve '{ref}'")
+          baseline = env["IN_BASELINE"].strip()
+          if not baseline:
+              tags = sh("git", "tag", "--list", "v[0-9]*.[0-9]*.[0-9]*", "--sort=-v:refname").splitlines()
+              baseline = tags[0]
+          candidate_sha, baseline_sha = resolve(env["IN_CANDIDATE"]), resolve(baseline)
+          print(f"candidate {env['IN_CANDIDATE']} = {candidate_sha}")
+          print(f"baseline  {baseline} = {baseline_sha}")
+          with open(env["GITHUB_OUTPUT"], "a") as out:
+              out.write(f"candidate_sha={candidate_sha}\nbaseline_sha={baseline_sha}\nbaseline_ref={baseline}\n")
+          PY
+
+  build:
+    needs: refs
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: The workflow's own tree (the opening pin and the preflight)
+        uses: actions/checkout@v5
+        with:
+          path: wf
+      - name: Candidate checkout
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.refs.outputs.candidate_sha }}
+          fetch-depth: 0
+          path: candidate-src
+      - name: Baseline checkout
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.refs.outputs.baseline_sha }}
+          fetch-depth: 0
+          path: baseline-src
+      - name: Install clang (Ubuntu 24.04's, LLVM 18)
+        run: sudo apt-get update && sudo apt-get install -y clang && clang --version
+      - name: Check runner has AVX2 + BMI2
+        run: |
+          grep -q avx2 /proc/cpuinfo && grep -q bmi2 /proc/cpuinfo \
+            || { echo "::error::runner CPU lacks AVX2/BMI2, which the x86-64-v3 build needs"; exit 1; }
+      - name: Build the candidate
+        run: make -C candidate-src -j"$(nproc)" ARCH=x86-64-v3
+      - name: Build the baseline
+        run: make -C baseline-src -j"$(nproc)" ARCH=x86-64-v3
+      - name: Gather the match inputs and write the manifest
+        env:
+          CANDIDATE_URL: ${{ inputs.candidate_net_url }}
+          CANDIDATE_SHA256: ${{ inputs.candidate_net_sha256 }}
+          BASELINE_URL: ${{ inputs.baseline_net_url }}
+          BASELINE_SHA256: ${{ inputs.baseline_net_sha256 }}
+          CANDIDATE_COMMIT: ${{ needs.refs.outputs.candidate_sha }}
+          BASELINE_COMMIT: ${{ needs.refs.outputs.baseline_sha }}
+          BASELINE_REF: ${{ needs.refs.outputs.baseline_ref }}
+        run: |
+          set -euo pipefail
+          mkdir -p inputs/candidate inputs/baseline
+          # The binary was named zenith until the rename of 2026-11-06, so a baseline at an older tag has build/zenith.
+          for role in candidate baseline; do
+            built=""
+            for name in trebuchet zenith; do
+              if [ -z "$built" ] && [ -x "$role-src/build/$name" ]; then built="$role-src/build/$name"; fi
+            done
+            [ -n "$built" ] || { echo "::error::$role built no engine binary"; exit 1; }
+            cp -L "$built" "inputs/$role/trebuchet"
+          done
+          cp wf/tools/match_preflight.py inputs/match_preflight.py
+
+          # The opening set is the one tools/openings.pin names: Pawnstar's, at a commit, verified against its
+          # SHA-256. It goes into the artifact exactly as committed, '#' header included: the core verifies that
+          # hash and then strips the comments itself, so the manifest carries the pin's own SHA-256.
+          pin_value() { sed -n "s/^$1=//p" wf/tools/openings.pin; }
+          openings_url="https://raw.githubusercontent.com/$(pin_value OPENINGS_REPOSITORY)/$(pin_value OPENINGS_COMMIT)/$(pin_value OPENINGS_PATH)"
+          curl -fsSL --retry 3 -o inputs/openings.epd "$openings_url"
+          echo "$(pin_value OPENINGS_SHA256)  inputs/openings.epd" | sha256sum -c -
+
+          # A side with no net URL plays the net its own binary embeds (and no EvalFile option is sent).
+          fetch_net() {   # <name> <url> <sha256>
+            [ -n "$2" ] || return 0
+            [ -n "$3" ] || { echo "::error::$1 net URL given without a SHA-256"; exit 1; }
+            curl -fsSL --retry 3 -o "inputs/$1.nnue" "$2"
+            echo "$3  inputs/$1.nnue" | sha256sum -c - || { echo "::error::$1 net does not match the SHA-256 given"; exit 1; }
+          }
+          fetch_net candidate "$CANDIDATE_URL" "$CANDIDATE_SHA256"
+          fetch_net baseline  "$BASELINE_URL"  "$BASELINE_SHA256"
+          chmod +x inputs/*/trebuchet
+
+          # The manifest tools/match_core.py reads (docs/match-core.md in pawnstar). Threads=1 and Hash come from
+          # the core; OwnBook is off for both sides, since a book move is not the engine's own search.
+          python3 - <<'PY'
+          import hashlib, json, os
+          def side(role, commit, label):
+              options = {}
+              if os.path.exists(f"inputs/{role}.nnue"):
+                  options["EvalFile"] = "{inputs}/%s.nnue" % role
+              return {"name": f"{label} {commit[:8]}",
+                      "command": "{inputs}/%s/trebuchet" % role,
+                      "options": options}
+          env = os.environ
+          manifest = {
+              "format": 1,
+              "candidate": side("candidate", env["CANDIDATE_COMMIT"], "candidate"),
+              "baseline": side("baseline", env["BASELINE_COMMIT"], env["BASELINE_REF"]),
+              "each_options": {"OwnBook": "false"},
+              "openings": {"path": "openings.epd",
+                           "sha256": hashlib.sha256(open("inputs/openings.epd", "rb").read()).hexdigest()},
+              "notes": [f"candidate commit {env['CANDIDATE_COMMIT']}",
+                        f"baseline {env['BASELINE_REF']} commit {env['BASELINE_COMMIT']}",
+                        f"workflow commit ${{ github.sha }}"],
+          }
+          json.dump(manifest, open("inputs/manifest.json", "w"), indent=2)
+          PY
+          {
+            echo "candidate_commit  $CANDIDATE_COMMIT"
+            echo "baseline_commit   $BASELINE_COMMIT ($BASELINE_REF)"
+            echo "workflow_commit   ${{ github.sha }}"
+            (cd inputs && shopt -s nullglob && sha256sum candidate/trebuchet baseline/trebuchet openings.epd *.nnue)
+          } | tee inputs/manifest.txt
+          {
+            echo '### Match inputs'
+            echo '```'
+            cat inputs/manifest.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v5
+        with:
+          name: match-inputs
+          path: inputs
+          retention-days: 14
+          if-no-files-found: error
+
+  match:
+    needs: [refs, build]
+    # Pinned to the commit of pawnstar#99 that merged match-core.yml, never a branch: the core checks its tools out at
+    # the ref it was called at.
+    uses: reckless-technology/pawnstar/.github/workflows/match-core.yml@c0ffab8bd8ed60369a9e819b9475b4a63e6157d4
+    with:
+      artifact: match-inputs
+      tag: trebuchet-match
+      title: 'Trebuchet: ${{ needs.refs.outputs.candidate_sha }} (candidate) vs ${{ needs.refs.outputs.baseline_ref }} ${{ needs.refs.outputs.baseline_sha }} (baseline)'
+      time_control: ${{ inputs.time_control || '8+0.08' }}
+      baseline_time_control: ${{ inputs.baseline_time_control }}
+      depth: ${{ inputs.depth }}
+      games: ${{ inputs.games || '4000' }}
+      chunks: ${{ inputs.chunks || '20' }}
+      concurrency: ${{ inputs.concurrency || '2' }}
+      hash_mb: ${{ inputs.hash_mb || '16' }}
+      first_opening: ${{ inputs.first_opening || '1' }}
+      # What a generic start-and-search probe cannot show: that each side kept the net it was given. trebuchet keeps
+      # playing its previous net when a net is refused, so the script fails the chunk on that message.
+      preflight: python3 "$MATCH_INPUTS/match_preflight.py"
