@@ -143,13 +143,12 @@ had, so a refused `EvalFile` would otherwise be played, and reported, as the wro
 
 ## The testing discipline (this is the point of the project)
 
-No strength change lands on intuition. Every change to search/eval must:
-1. keep `./build/trebuchet perft` passing (movegen invariant — never regress this),
-2. produce a new, deterministic `./build/trebuchet bench` node signature, and
-3. pass a self-play **SPRT** vs the prior baseline (`tools/sprt.sh`).
-
-When you touch search or eval, expect to run all three. Perft and bench are fast local gates; SPRT is the
-real verdict on whether a change gains Elo.
+No strength change lands on intuition. The gates and their order (perft, the deterministic `bench` signature, the
+pre-SPRT probe, an SPRT; non-regression bounds for a refactor with no intended strength change; pinning options;
+reporting progress; SPSA) are in the `reckless-chess-engines` skill. Trebuchet's commands for them: perft is
+`./build/trebuchet perft` (movegen invariant, never regress it), the node signature is `./build/trebuchet bench`, and the
+SPRT is `tools/sprt.sh` (`ELO0=-5 ELO1=0 tools/sprt.sh` for a non-regression test). When you touch search or eval, expect
+to run all three.
 
 ## Architecture
 
