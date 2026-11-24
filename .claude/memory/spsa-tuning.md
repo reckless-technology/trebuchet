@@ -7,20 +7,20 @@ metadata:
 
 Trebuchet has an SPSA tuner for its hand-set search constants (fastchess has no built-in SPSA).
 
+The method (expose each tunable as a UCI spin option, tune at a fast time control, mandatory SPRT validation, bake and
+check node-signature equality, one chained `--resume` descent, diminishing returns, detached launch watched by checkpoint
+mtime) is in the `reckless-chess-engines` skill, "SPSA tuning". What follows is Trebuchet's own parameters, flags and
+results.
+
 - **Engine side:** 11 search params are exposed as UCI spin options via `SearchParams` (search.h) + `set_search_param`
-  (search.c). Option NAMES are PascalCase strings (`RfpMargin`, `LmrDivisor`, `HistoryMax`, …) even though the engine
-  members are snake_case — spsa.py and GUIs depend on those strings, so don't rename them. Defaults reproduce the
-  shipped engine; changing a param changes the search (verify via a fixed-depth node count).
-- **Tuner:** `tools/spsa.py` — Spall SPSA with decaying gains, perturbs all params +/- c_k*Delta, plays a theta+ vs
-  theta- self-play match per iteration (same binary, different `option.X=` values), parses fastchess
-  `Games/Wins/Losses`, checkpoints theta to json each iteration. Run:
+  (search.c). Option NAMES are PascalCase strings (`RfpMargin`, `LmrDivisor`, `HistoryMax`, ...) even though the engine
+  members are snake_case; spsa.py and GUIs depend on those strings.
+- **Tuner:** `tools/spsa.py`, Spall SPSA with decaying gains, perturbs all params +/- c_k*Delta, plays a theta+ vs theta-
+  self-play match per iteration (same binary, different `option.X=` values), parses fastchess `Games/Wins/Losses`,
+  checkpoints theta to json each iteration. Run:
   `python tools/spsa.py --engine ./trebuchet --net nets/kb3.nnue --openings ~/pawnstar_nnue/openings.epd \
    --fastchess ~/pawnstar_nnue/fastchess/fastchess --iters 800 --games 16 --concurrency 16 --tc 5+0.05 --out state.json`
-- **Timing:** 16 games/iter at conc 16, tc 5+0.05 ≈ 27s/iter → 800 iters ≈ 6h. tc 8+0.08 is ~2x slower (impractical
-  for many iters) — tune at a FAST tc (5+0.05), it transfers to the 8+0.08 validation.
-- **Validation is mandatory:** SPSA optimizes a noisy fast-tc objective. Always SPRT the tuned OPTION values vs the
-  defaults at 8+0.08 (same binary, different options — clean isolation) before baking. Then bake winners into
-  `SearchParams` defaults and consistency-check (baked node signature == tuned-options node signature).
+- **Timing:** 16 games/iter at conc 16, tc 5+0.05 is about 27 s/iter, so 800 iters is about 6 h; tc 8+0.08 is about 2x slower.
 
 **First pass (2026-07-23, commit a8113c0): +26.5 ± 9.6 Elo, H1 accepted.** Biggest moves: RfpMargin 80→62, LmrBase
 80→86, FutilityMargin 90→96, HistoryMax 400→418, LmpBase 3→4; the other 6 were already near-optimal. Re-tuning
@@ -32,9 +32,8 @@ decaying): 2 rounds x 250 iters, 16 games/iter @ 5+0.05, conc 16 (~1.9h/round). 
 iters (last 150 = noise). Winners: RfpMargin 62→56, NmpDivisor 202→199, LmpBase 4→5, FutilityBase 102→94,
 FutilityMargin 96→98, SeeCaptureMargin 102→97, LmrBase 86→90, LmrDivisor 229→220, HistoryMax 418→402;
 SingularMargin/AspirationDelta never moved. New bench signature 2657379. Consistency gate (baked ==
-options, node-identical) passed. Ops lesson: launch the tuner detached (setsid) in its OWN Bash call —
-never put pkill and the launch in one command (the pattern matches the launch line's text and kills the
-wrapper); monitor liveness by checkpoint-file mtime, never pgrep.
+options, node-identical) passed. Ops lesson: launch the tuner detached (setsid) in its OWN Bash call, never with
+pkill in the same command (the pattern matches the launch line's own text and kills the wrapper).
 
 **Pass 3 (2026-07-31, cap1-era): NO BAKE — optimum confirmed stable.** 800 iterations at 8+0.08 against
 the 1024-hidden engine; converged theta moved only a few percent of range (NmpDivisor 199->186,

@@ -8,23 +8,12 @@ metadata:
   modified: 2026-07-31T06:04:48.722Z
 ---
 
-Jonny explicitly likes the pawnstar-era practice of SPRT matches reporting progress regularly (games
-played, score, Elo estimate, LLR) while running.
+The method (report progress while an SPRT or SPSA run is going, keep the whole fastchess log, attach a Monitor on the
+`Games:` lines, pin Threads, Hash and OwnBook on both engines and verify the pins from `/proc/<pid>/cmdline`) is in the
+`reckless-chess-engines` skill, "Running an SPRT"; the `pgrep -f` self-match hazard is in `reckless-working-practice`'s
+`references/tooling-gotchas.md`.
 
-**Why:** long SPRTs (hours) that only report at the verdict leave him blind to how things are shaping up;
-he asked for status repeatedly during a silent 8-hour validation run and then said he liked the old way.
-
-**How to apply:** never pipe a long fastchess run through a filter that discards interim output. Retain
-the FULL fastchess log (`> run.log 2>&1`), then attach a Monitor that emits the periodic
-`Games:`/`Elo`/`LLR:` lines every 50 games (Jonny's stated cadence: `Games: [0-9]*[05]0,`) plus
-the final `SPRT (` verdict line. Relay each milestone to Jonny in one line. Same pattern for SPSA
-(per-100-iteration lines) and training (per-epoch lines) — already standard; SPRT was the gap.
-
-**Engine invariants (Jonny's explicit rule):** every match harness sets BOTH engines explicitly — never
-rely on defaults: `option.Threads=1 option.Hash=64 option.OwnBook=false`, and no pondering (Trebuchet has no
-Ponder option; fastchess does not ponder — re-verify if either changes). Defaults drift (the embedded book
-made OwnBook semantics richer; pawnstar's Threads=32/OwnBook=true burned a whole measurement once).
-Verify the pins landed via /proc/<fastchess>/cmdline, not by trusting the launcher script.
-
-Related hazard when restarting such runs (now in `reckless-technology/claude-skills`, skill `reckless-working-practice`): a `pgrep -f` wait loop matches itself — kill by PID, never by
-`pkill -f` patterns that appear in your own command line.
+Specific to Trebuchet: Jonny asked for status repeatedly during a silent 8-hour validation run (2026-07) and then said he
+liked the pawnstar-era practice. This harness's pins are `option.Threads=1 option.Hash=64 option.OwnBook=false`
+(Trebuchet has no Ponder option; fastchess does not ponder, so re-verify if either changes). The embedded book made
+`OwnBook` semantics richer, which is why it is pinned rather than trusted to its default.
